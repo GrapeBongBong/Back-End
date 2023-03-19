@@ -28,7 +28,15 @@ dependencies {
 
 	// swagger
 	implementation 'io.springfox:springfox-boot-starter:3.0.0'
-	// swagger
+
+	// jpa
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+	// mysql
+	implementation 'mysql:mysql-connector-java:8.0.28'
+
+	// HikariCP
+	implementation 'com.zaxxer:HikariCP:3.4.5'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
