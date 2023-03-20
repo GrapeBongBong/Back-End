@@ -1,16 +1,19 @@
 package com.example.capstone.entity;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 
 import javax.persistence.*;
+import java.util.Set;
 
 @Entity
 @Getter
 @Setter
 @Table(name = "user_table")
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class UserEntity {
     @Id // pk 지정
     @Column(unique = true)
@@ -60,4 +63,12 @@ public class UserEntity {
     @Column
     @NonNull
     private String hobby; // 취미
+
+    @Column(name = "activated")
+    private boolean activated;
+
+    @Column(name = "role")
+    private String role; //역할
+
+
 }

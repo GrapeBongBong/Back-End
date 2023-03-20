@@ -1,17 +1,28 @@
 package com.example.capstone.controller;
 
+import com.example.capstone.dto.LoginDTO;
+import com.example.capstone.dto.TokenDTO;
 import com.example.capstone.dto.UserDTO;
 import com.example.capstone.data.BasicResponse;
 import com.example.capstone.entity.UserEntity;
+import com.example.capstone.jwt.JwtFilter;
+import com.example.capstone.jwt.TokenProvider;
 import com.example.capstone.repository.UserRepository;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
 
 @Api(tags = {"로그인 / 회원가입 API"})
 @RestController
@@ -20,11 +31,28 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final UserRepository userRepository;
+    private final TokenProvider tokenProvider;
+    private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
-    @ApiOperation(value = "hello 매소드", notes = "hello 메시지를 반환합니다.") // hello() 메소드 문서화
+    @ApiOperation(value = "login 메소드")
     @PostMapping("/login")
-    public String login() {
-        return "hello";
+    public ResponseEntity<TokenDTO> login(@Valid @RequestBody LoginDTO loginDto) {
+
+        // userId와 userPassword로 authentication 토큰 생성
+        UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(loginDto.getId(), loginDto.getPassword());
+
+        //
+        Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        //jwt token 발행
+        String jwt = tokenProvider.createToken(authentication);
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add(JwtFilter.AUTHORIZATION_HEADER, "Bearer " + jwt);
+
+        return new ResponseEntity<>(new TokenDTO("로그인 성공 " + jwt), httpHeaders, HttpStatus.OK);
     }
 
     @ApiOperation(value = "회원가입", notes = "사용자 정보를 입력받아 등록합니다.")
@@ -35,8 +63,8 @@ public class AuthController {
     @PostMapping("/join")
     public ResponseEntity<BasicResponse> join(@RequestBody UserDTO userDTO) {
 
-        /**
-         * {
+
+/*         * {
          *     "user_id": "1111",
          *     "password": "1111",
          *     "name": "홍길동",
@@ -49,8 +77,7 @@ public class AuthController {
          *     "org_id": "100001",
          *     "job": "학생",
          *     "hobby": "영화"
-         * }
-         */
+         * }*/
         System.out.println("AuthController.join");
 
         BasicResponse basicResponse = new BasicResponse();
