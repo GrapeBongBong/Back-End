@@ -1,8 +1,8 @@
 package com.example.capstone.entity;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import lombok.*;
 import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
 
 import javax.persistence.*;
 import java.util.Set;
@@ -14,6 +14,7 @@ import java.util.Set;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonAutoDetect
 public class UserEntity {
     @Id // pk 지정
     @Column(unique = true)
@@ -64,11 +65,11 @@ public class UserEntity {
     @NonNull
     private String hobby; // 취미
 
-    @Column(name = "activated")
-    private boolean activated;
-
-    @Column(name = "role")
-    private String role; //역할
-
+ @ManyToMany
+ @JoinTable(
+         name = "user_role",
+         joinColumns = {@JoinColumn(name = "id", referencedColumnName = "id")},
+         inverseJoinColumns = {@JoinColumn(name = "role_name", referencedColumnName = "role_name")})
+ private Set<Role> roles;
 
 }

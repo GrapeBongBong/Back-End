@@ -36,11 +36,11 @@ public class AuthController {
 
     @ApiOperation(value = "login 메소드")
     @PostMapping("/login")
-    public ResponseEntity<TokenDTO> login(@Valid @RequestBody LoginDTO loginDto) {
+    public ResponseEntity<TokenDTO> login(@Valid @RequestBody LoginDTO loginDTO) {
 
         // userId와 userPassword로 authentication 토큰 생성
         UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(loginDto.getId(), loginDto.getPassword());
+                new UsernamePasswordAuthenticationToken(loginDTO.getId(), loginDTO.getPassword());
 
         //
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);

@@ -38,7 +38,7 @@ public class SecurityConfig {
         this.jwtAccessDeniedHandler = jwtAccessDeniedHandler;
     }
 
-    @Bean
+   @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
@@ -68,7 +68,7 @@ public class SecurityConfig {
 
                 .and()
                 .authorizeHttpRequests()
-                .antMatchers("/api/login", "/api/join").permitAll() //
+                .antMatchers("/auth/login", "/auth/join").permitAll() //
                // .requestMatchers(PathRequest.toH2Console()).permitAll()
                 .anyRequest().authenticated()
 
