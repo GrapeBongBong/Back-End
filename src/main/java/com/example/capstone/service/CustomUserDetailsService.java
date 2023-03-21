@@ -24,19 +24,25 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     @Transactional
     public UserDetails loadUserByUsername(final String username) {
-        /*return userRepository.findOneWithAuthoritiesByUsername(username)
+
+        return userRepository.findById(username)
                 .map(user -> createUser(username, user))
+<<<<<<< Updated upstream
+                .orElseThrow(() -> new UsernameNotFoundException(username + " -> 데이터베이스에서 찾을 수 없습니다."));
+       // return (UserDetails) userRepository.findById(username).orElseThrow(() -> new UsernameNotFoundException(username + " -> 데이터베이스에서 찾을 수 없습니다."));
+=======
                 .orElseThrow(() -> new UsernameNotFoundException(username + " -> 데이터베이스에서 찾을 수 없습니다."));*/
-        return (UserDetails) userRepository.findOneWithAuthoritiesById(String.valueOf(username)).orElseThrow(() -> new UsernameNotFoundException(username + " -> 데이터베이스에서 찾을 수 없습니다."));
+        return (UserDetails) userRepository.findOneWithRolesById(String.valueOf(username)).orElseThrow(() -> new UsernameNotFoundException(username + " -> 데이터베이스에서 찾을 수 없습니다."));
+>>>>>>> Stashed changes
     }
 
-   /* private org.springframework.security.core.userdetails.User createUser(String id, UserEntity user) {
-        if (!user.isActivated()) {
+   private org.springframework.security.core.userdetails.User createUser(String id, UserEntity user) {
+       /* if (!user.isActivated()) {
             throw new RuntimeException(id + " -> 활성화되어 있지 않습니다.");
-        }
+        }*/
 
-        List<GrantedAuthority> grantedAuthorities = user.getRole()
-                .map(user -> new SimpleGrantedAuthority(user.ge()))
+        List<GrantedAuthority> grantedAuthorities = user.getRoles().stream()
+                .map(authority -> new SimpleGrantedAuthority(authority.getRoleName()))
                 .collect(Collectors.toList());
 
         return new org.springframework.security.core.userdetails.User(user.getId(),
@@ -46,5 +52,5 @@ public class CustomUserDetailsService implements UserDetailsService {
 
 
     }
-*/
+
 }

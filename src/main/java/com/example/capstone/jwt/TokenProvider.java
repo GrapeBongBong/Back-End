@@ -61,6 +61,7 @@ public class TokenProvider implements InitializingBean {
     }
 
     public Authentication getAuthentication(String token) {
+        //claim 생성
         Claims claims = Jwts
                 .parserBuilder()
                 .setSigningKey(key)
@@ -68,16 +69,19 @@ public class TokenProvider implements InitializingBean {
                 .parseClaimsJws(token)
                 .getBody();
 
+        //claim에서 권한 정보를 빼내어 user 객체를 만듦
         Collection<? extends GrantedAuthority> authorities =
                 Arrays.stream(claims.get(AUTHORITIES_KEY).toString().split(","))
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
+        //여기서 user 객체는 org.springframework.security.core.userdetails의 User
         User principal = new User(claims.getSubject(), "", authorities);
 
         return new UsernamePasswordAuthenticationToken(principal, token, authorities);
     }
 
+    //토큰의 유효성 검사
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
