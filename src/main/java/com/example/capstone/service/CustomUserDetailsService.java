@@ -27,8 +27,13 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         return userRepository.findById(username)
                 .map(user -> createUser(username, user))
+<<<<<<< Updated upstream
                 .orElseThrow(() -> new UsernameNotFoundException(username + " -> 데이터베이스에서 찾을 수 없습니다."));
        // return (UserDetails) userRepository.findById(username).orElseThrow(() -> new UsernameNotFoundException(username + " -> 데이터베이스에서 찾을 수 없습니다."));
+=======
+                .orElseThrow(() -> new UsernameNotFoundException(username + " -> 데이터베이스에서 찾을 수 없습니다."));*/
+        return (UserDetails) userRepository.findOneWithRolesById(String.valueOf(username)).orElseThrow(() -> new UsernameNotFoundException(username + " -> 데이터베이스에서 찾을 수 없습니다."));
+>>>>>>> Stashed changes
     }
 
    private org.springframework.security.core.userdetails.User createUser(String id, UserEntity user) {
