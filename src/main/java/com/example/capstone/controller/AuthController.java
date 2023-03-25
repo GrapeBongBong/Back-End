@@ -64,26 +64,27 @@ public class AuthController {
     public ResponseEntity<BasicResponse> join(@RequestBody UserDTO userDTO) {
 
 
-/*         * {
-         *     "user_id": "1111",
-         *     "password": "1111",
-         *     "name": "홍길동",
-         *     "nickName": "홍길동",
-         *     "birth": "991013",
-         *     "email": "aaaa@naver.com",
-         *     "gender": "여자",
-         *     "phoneNum": "010-1111-1111",
-         *     "address": "서울시 성북구",
-         *     "org_id": "100001",
-         *     "job": "학생",
-         *     "hobby": "영화"
-         * }*/
+       /* {
+            "user_id": "1111",
+            "password": "1111",
+            "name": "홍길동",
+            "nickName": "홍길동",
+            "birth": "991013",
+            "email": "aaaa@naver.com",
+            "gender": "여자",
+            "phoneNum": "010-1111-1111",
+            "address": "서울시 성북구",
+            "org_id": "100001",
+            "job": "학생",
+            "hobby": "영화"
+        }*/
         System.out.println("AuthController.join");
 
         BasicResponse basicResponse = new BasicResponse();
 
         try {
             UserEntity userEntity = new UserEntity();
+            userEntity.setUid(userDTO.getUid());
             userEntity.setId(userDTO.getId());
             userEntity.setPassword(userDTO.getPassword());
             userEntity.setName(userDTO.getName());

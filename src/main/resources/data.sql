@@ -1,0 +1,1 @@
+ALTER TABLE capstone.user_table AUTO_INCREMENT=10000;

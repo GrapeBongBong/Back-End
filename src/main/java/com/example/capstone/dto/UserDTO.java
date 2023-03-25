@@ -10,6 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserDTO {
+    private Long Uid;
     private String id; // 사용자 아이디
     private String password;
     private String name;
@@ -22,4 +23,5 @@ public class UserDTO {
     private String org_id; // 기관 ID
     private String job; // 직업
     private String hobby; // 취미
+
 }

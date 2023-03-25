@@ -1,6 +1,7 @@
 package com.example.capstone.entity;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.springframework.lang.NonNull;
 
@@ -17,10 +18,13 @@ import java.util.Set;
 @JsonAutoDetect
 public class UserEntity {
     @Id // pk 지정
-    @Column(unique = true)
-//    @GeneratedValue(strategy = GenerationType.IDENTITY) // auto_increment
-    private String id;
+    @JsonIgnore
+    @Column(name = "Uid")
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // auto_increment
+    private Long Uid;
 
+    @Column//(unique = true)
+    private String id;
     @Column
     @NonNull
     private String password;
@@ -68,7 +72,7 @@ public class UserEntity {
  @ManyToMany
  @JoinTable(
          name = "user_role",
-         joinColumns = {@JoinColumn(name = "id", referencedColumnName = "id")},
+         joinColumns = {@JoinColumn(name = "Uid", referencedColumnName = "Uid")},
          inverseJoinColumns = {@JoinColumn(name = "role_name", referencedColumnName = "role_name")})
  private Set<Role> roles;
 
