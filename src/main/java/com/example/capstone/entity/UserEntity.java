@@ -1,11 +1,14 @@
 package com.example.capstone.entity;
 
+import com.example.capstone.dto.UserDTO;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.springframework.lang.NonNull;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.persistence.*;
+import javax.transaction.Transactional;
 import java.util.Set;
 
 @Entity
@@ -18,13 +21,15 @@ import java.util.Set;
 @JsonAutoDetect
 public class UserEntity {
     @Id // pk 지정
-    @JsonIgnore
+//    @JsonIgnore
     @Column(name = "Uid")
     @GeneratedValue(strategy = GenerationType.IDENTITY) // auto_increment
     private Long Uid;
 
     @Column//(unique = true)
+    @NonNull
     private String id;
+
     @Column
     @NonNull
     private String password;
@@ -51,7 +56,7 @@ public class UserEntity {
 
     @Column
     @NonNull
-    private String phone_num; // 010-1111-1111
+    private String phone_num; // 01011112222
 
     @Column
     @NonNull
@@ -59,21 +64,46 @@ public class UserEntity {
 
     @Column
     @NonNull
-    private String org_id; // 기관 ID (100001)
+    private boolean activated;
 
     @Column
     @NonNull
-    private String job; // 직업
+    private String talent;
 
     @Column
     @NonNull
-    private String hobby; // 취미
+    private String profile_img;
 
- @ManyToMany
- @JoinTable(
-         name = "user_role",
-         joinColumns = {@JoinColumn(name = "Uid", referencedColumnName = "Uid")},
-         inverseJoinColumns = {@JoinColumn(name = "role_name", referencedColumnName = "role_name")})
- private Set<Role> roles;
+    @ManyToMany
+    @JoinTable(
+            name = "user_role",
+            joinColumns = {@JoinColumn(name = "Uid", referencedColumnName = "Uid")},
+            inverseJoinColumns = {@JoinColumn(name = "role_name", referencedColumnName = "role_name")})
+    private Set<RoleEntity> roles;
 
+    // 비밀번호 암호화
+    public UserEntity hashPassword(PasswordEncoder passwordEncoder) {
+        this.password = passwordEncoder.encode(this.password);
+        return this;
+    }
+
+    public static UserEntity toUserEntity(UserDTO userDTO) {
+        UserEntity userEntity = new UserEntity();
+
+        userEntity.setId(userDTO.getId());
+        userEntity.setPassword(userDTO.getPassword());
+        userEntity.setName(userDTO.getName());
+        userEntity.setNick_name(userDTO.getNickName());
+        userEntity.setBirth(userDTO.getBirth());
+        userEntity.setEmail(userDTO.getEmail());
+        userEntity.setGender(userDTO.getGender());
+        userEntity.setPhone_num(userDTO.getPhoneNum());
+        userEntity.setAddress(userDTO.getAddress());
+        userEntity.setActivated(userDTO.getActivated());
+        userEntity.setProfile_img(userDTO.getProfile_img());
+        userEntity.setTalent(userDTO.getTalent());
+        userEntity.setRoles(userDTO.getRole());
+
+        return userEntity;
+    }
 }

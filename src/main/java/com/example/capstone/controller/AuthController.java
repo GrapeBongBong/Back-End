@@ -1,5 +1,6 @@
 package com.example.capstone.controller;
 
+import com.example.capstone.data.DataResponse;
 import com.example.capstone.dto.LoginDTO;
 import com.example.capstone.dto.TokenDTO;
 import com.example.capstone.dto.UserDTO;
@@ -8,11 +9,14 @@ import com.example.capstone.entity.UserEntity;
 import com.example.capstone.jwt.JwtFilter;
 import com.example.capstone.jwt.TokenProvider;
 import com.example.capstone.repository.UserRepository;
+import com.example.capstone.service.CustomUserDetailsService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +24,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -33,26 +39,47 @@ public class AuthController {
     private final UserRepository userRepository;
     private final TokenProvider tokenProvider;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
+    private final PasswordEncoder bCryptPasswordEncoder;
 
     @ApiOperation(value = "login 메소드")
     @PostMapping("/login")
-    public ResponseEntity<TokenDTO> login(@Valid @RequestBody LoginDTO loginDTO) {
+    public ResponseEntity<DataResponse> login(@Valid @RequestBody LoginDTO loginDTO) {
 
-        // userId와 userPassword로 authentication 토큰 생성
-        UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(loginDTO.getId(), loginDTO.getPassword());
+        DataResponse basicResponse = new DataResponse();
 
-        //
-        Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        try {
+            // id와 userPassword로 authentication 토큰 생성
+            UsernamePasswordAuthenticationToken authenticationToken =
+                    new UsernamePasswordAuthenticationToken(loginDTO.getId(), loginDTO.getPassword());
 
-        //jwt token 발행
-        String jwt = tokenProvider.createToken(authentication);
+            //
+            Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add(JwtFilter.AUTHORIZATION_HEADER, "Bearer " + jwt);
+            //jwt token 발행
+            String jwt = tokenProvider.createToken(authentication);
 
-        return new ResponseEntity<>(new TokenDTO("로그인 성공 " + jwt), httpHeaders, HttpStatus.OK);
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.add(JwtFilter.AUTHORIZATION_HEADER, "Bearer " + jwt);
+
+            basicResponse = DataResponse.builder()
+                    .code(200)
+                    .httpStatus(HttpStatus.OK)
+                    .message("로그인에 성공했습니다.")
+                    .data(httpHeaders)
+                    .build();
+
+        } catch (Exception e) {
+            basicResponse = DataResponse.builder()
+                    .code(401)
+                    .httpStatus(HttpStatus.UNAUTHORIZED)
+                    .message("비밀번호가 틀렸습니다.")
+                    .build();
+        }
+
+        return new ResponseEntity<>(basicResponse, basicResponse.getHttpStatus());
+
+//        return new ResponseEntity<>(new TokenDTO("로그인 성공 " + jwt), httpHeaders, HttpStatus.OK);
     }
 
     @ApiOperation(value = "회원가입", notes = "사용자 정보를 입력받아 등록합니다.")
@@ -65,57 +92,60 @@ public class AuthController {
 
 
        /* {
-            "user_id": "1111",
+            "id": "1111",
             "password": "1111",
             "name": "홍길동",
             "nickName": "홍길동",
-            "birth": "991013",
+            "birth": "1999-10-13",
             "email": "aaaa@naver.com",
             "gender": "여자",
-            "phoneNum": "010-1111-1111",
+            "phoneNum": "01011112222",
             "address": "서울시 성북구",
-            "org_id": "100001",
-            "job": "학생",
-            "hobby": "영화"
+            "talent": "재능",
+            "profile_img": "url_sample"
         }*/
+
         System.out.println("AuthController.join");
 
+
+
         BasicResponse basicResponse = new BasicResponse();
-
         try {
-            UserEntity userEntity = new UserEntity();
-            userEntity.setUid(userDTO.getUid());
-            userEntity.setId(userDTO.getId());
-            userEntity.setPassword(userDTO.getPassword());
-            userEntity.setName(userDTO.getName());
-            userEntity.setNick_name(userDTO.getNickName());
-            userEntity.setBirth(userDTO.getBirth());
-            userEntity.setEmail(userDTO.getEmail());
-            userEntity.setGender(userDTO.getGender());
-            userEntity.setPhone_num(userDTO.getPhoneNum());
-            userEntity.setAddress(userDTO.getAddress());
-            userEntity.setOrg_id(userDTO.getOrg_id());
-            userEntity.setJob(userDTO.getJob());
-            userEntity.setHobby(userDTO.getHobby());
+            if (userRepository.findById(userDTO.getId()).orElse(null) != null) { // 이미 존재하는 아이디
+                basicResponse = BasicResponse.builder()
+                        .code(409)
+                        .httpStatus(HttpStatus.CONFLICT)
+                        .message("이미 존재하는 아이디입니다.")
+                        .build();
+            } else if (userRepository.findByEmail(userDTO.getEmail()).orElse(null) != null) {
+                basicResponse = BasicResponse.builder()
+                        .code(408)
+                        .httpStatus(HttpStatus.CONFLICT)
+                        .message("이미 가입되어 있는 이메일입니다.")
+                        .build();
+            } else {
 
-            // repository 의 save() 호출 (entity 객체 넘겨줘야 함)
-            userRepository.save(userEntity);
+                UserEntity newUser = UserEntity.toUserEntity(userDTO);
 
-            basicResponse = BasicResponse.builder()
-                    .code(200)
-                    .httpStatus(HttpStatus.OK)
-                    .message("회원가입에 성공했습니다.")
-                    .build();
+                // 사용자 비밀번호 암호화
+                newUser.hashPassword(bCryptPasswordEncoder);
+
+                // repository 의 save() 호출 (entity 객체 넘겨줘야 함)
+                userRepository.save(newUser);
+
+                basicResponse = BasicResponse.builder()
+                        .code(200)
+                        .httpStatus(HttpStatus.OK)
+                        .message("회원가입에 성공했습니다.")
+                        .build();
+            }
         } catch (Exception e) {
             basicResponse = BasicResponse.builder()
-                    .code(404)
+                    .code(500)
                     .httpStatus(HttpStatus.NOT_FOUND)
                     .message("서버에 에러가 발생했습니다." + e)
                     .build();
         }
-
-        // 정상적으로 entity 가 담겨지고 save() 가 호출되었으면 성공
-        // 그렇지 않으면 실패
 
         return new ResponseEntity<>(basicResponse, basicResponse.getHttpStatus());
     }

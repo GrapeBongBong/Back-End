@@ -1,9 +1,12 @@
 package com.example.capstone.dto;
 
+import com.example.capstone.entity.RoleEntity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.Set;
 
 @Getter
 @Setter
@@ -20,8 +23,8 @@ public class UserDTO {
     private String gender;
     private String phoneNum;
     private String address;
-    private String org_id; // 기관 ID
-    private String job; // 직업
-    private String hobby; // 취미
-
+    private Boolean activated;
+    private String talent; // 재능
+    private String profile_img; // 프로필 이미지 url
+    private Set<RoleEntity> role;
 }
