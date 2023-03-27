@@ -23,7 +23,7 @@ public class UserEntity {
     @Id // pk 지정
 //    @JsonIgnore
     @Column(name = "Uid")
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // auto_increment
+    @GeneratedValue(strategy = GenerationType.IDENTITY, generator = "Uid") // auto_increment
     private Long Uid;
 
     @Column//(unique = true)
@@ -98,8 +98,8 @@ public class UserEntity {
         userEntity.setEmail(userDTO.getEmail());
         userEntity.setGender(userDTO.getGender());
         userEntity.setPhone_num(userDTO.getPhoneNum());
+        // activated 세팅 추가하기
         userEntity.setAddress(userDTO.getAddress());
-        userEntity.setActivated(userDTO.getActivated());
         userEntity.setProfile_img(userDTO.getProfile_img());
         userEntity.setTalent(userDTO.getTalent());
         userEntity.setRoles(userDTO.getRole());
