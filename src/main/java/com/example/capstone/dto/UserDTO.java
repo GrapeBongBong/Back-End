@@ -13,7 +13,6 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserDTO {
-    private Long uid;
     private String id; // 사용자 아이디
     private String password;
     private String name;
@@ -25,5 +24,4 @@ public class UserDTO {
     private String address;
     private String talent; // 재능
     private String profile_img; // 프로필 이미지 url
-    private Set<RoleEntity> role;
 }

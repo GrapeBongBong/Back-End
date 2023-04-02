@@ -102,7 +102,7 @@ public class UserEntity {
         userEntity.setAddress(userDTO.getAddress());
         userEntity.setProfile_img(userDTO.getProfile_img());
         userEntity.setTalent(userDTO.getTalent());
-        userEntity.setRoles(userDTO.getRole());
+//        userEntity.setRoles(userDTO.getRole()); // 아직까지는 필요 없음
 
         return userEntity;
     }

@@ -2,21 +2,17 @@ package com.example.capstone.controller;
 
 import com.example.capstone.data.DataResponse;
 import com.example.capstone.dto.LoginDTO;
-import com.example.capstone.dto.TokenDTO;
 import com.example.capstone.dto.UserDTO;
 import com.example.capstone.data.BasicResponse;
 import com.example.capstone.entity.UserEntity;
 import com.example.capstone.jwt.JwtFilter;
 import com.example.capstone.jwt.TokenProvider;
 import com.example.capstone.repository.UserRepository;
-import com.example.capstone.service.CustomUserDetailsService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +20,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,7 +36,11 @@ public class AuthController {
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final PasswordEncoder bCryptPasswordEncoder;
 
-    @ApiOperation(value = "login 메소드")
+    @ApiOperation(value = "로그인", notes = "아이디와 비밀번호를 입력받아 로그인합니다.", response = DataResponse.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "로그인에 성공했습니다."),
+            @ApiResponse(code = 401, message = "비밀번호가 틀렸습니다.")
+    })
     @PostMapping("/login")
     public ResponseEntity<DataResponse> login(@Valid @RequestBody LoginDTO loginDTO) {
 
@@ -85,6 +84,8 @@ public class AuthController {
     @ApiOperation(value = "회원가입", notes = "사용자 정보를 입력받아 등록합니다.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "회원가입에 성공했습니다."),
+            @ApiResponse(code = 408, message = "이미 가입되어 있는 이메일입니다."),
+            @ApiResponse(code = 409, message = "이미 존재하는 아이디입니다."),
             @ApiResponse(code = 404, message = "서버에 문제가 생겼습니다.")
     })
     @PostMapping("/join")
