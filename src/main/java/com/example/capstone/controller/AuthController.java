@@ -10,8 +10,10 @@ import com.example.capstone.jwt.TokenProvider;
 import com.example.capstone.repository.UserRepository;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -38,8 +40,8 @@ public class AuthController {
 
     @ApiOperation(value = "로그인", notes = "아이디와 비밀번호를 입력받아 로그인합니다.", response = DataResponse.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "로그인에 성공했습니다."),
-            @ApiResponse(code = 401, message = "비밀번호가 틀렸습니다.")
+            @ApiResponse(responseCode = "200", description = "로그인에 성공했습니다.", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = UserEntity.class))}),
+            @ApiResponse(responseCode = "401", description = "비밀번호가 틀렸습니다.", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = UserEntity.class))})
     })
     @PostMapping("/login")
     public ResponseEntity<DataResponse> login(@Valid @RequestBody LoginDTO loginDTO) {
@@ -83,10 +85,10 @@ public class AuthController {
 
     @ApiOperation(value = "회원가입", notes = "사용자 정보를 입력받아 등록합니다.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "회원가입에 성공했습니다."),
-            @ApiResponse(code = 408, message = "이미 가입되어 있는 이메일입니다."),
-            @ApiResponse(code = 409, message = "이미 존재하는 아이디입니다."),
-            @ApiResponse(code = 404, message = "서버에 문제가 생겼습니다.")
+            @ApiResponse(responseCode = "200", description = "회원가입에 성공했습니다.", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = UserEntity.class))}),
+            @ApiResponse(responseCode = "408", description = "이미 가입되어 있는 이메일입니다.", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = UserEntity.class))}),
+            @ApiResponse(responseCode = "409", description = "이미 존재하는 아이디입니다.", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = UserEntity.class))}),
+            @ApiResponse(responseCode = "404", description = "서버에 문제가 생겼습니다.", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = UserEntity.class))})
     })
     @PostMapping("/join")
     public ResponseEntity<BasicResponse> join(@RequestBody UserDTO userDTO) {

@@ -2,13 +2,11 @@ package com.example.capstone.entity;
 
 import com.example.capstone.dto.UserDTO;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.springframework.lang.NonNull;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.persistence.*;
-import javax.transaction.Transactional;
 import java.util.Set;
 
 @Entity

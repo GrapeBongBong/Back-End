@@ -1,9 +1,7 @@
 package com.example.capstone.repository;
 
 import com.example.capstone.entity.UserEntity;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 
 import java.util.Optional;
 
