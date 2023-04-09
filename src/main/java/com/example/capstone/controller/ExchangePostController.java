@@ -49,6 +49,8 @@ public class ExchangePostController {
             // ExchangePostDTO 에서 Uid 값을 이용해 UserEntity 객체 조회
             UserEntity user = userRepository.findById(exchangePostDTO.getUid()).orElseThrow();
 
+            System.out.println("게시글 작성자의 Uid = " + exchangePostDTO.getUid());
+
             ExchangePost exchangePost = ExchangePost.toExchangePost(exchangePostDTO, user);
             postRepository.save(exchangePost);
 
@@ -59,7 +61,11 @@ public class ExchangePostController {
                     .build();
 
         } catch (Exception e) {
-
+            dataResponse = DataResponse.builder()
+                    .code(401)
+                    .httpStatus(HttpStatus.UNAUTHORIZED)
+                    .message("서버에 에러가 발생했습니다." + e)
+                    .build();
         }
 
         return new ResponseEntity<>(dataResponse, dataResponse.getHttpStatus());

@@ -16,11 +16,12 @@ public class ChatRoom {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "room_id")
-    private String roomId;
+    private Long roomId;
 
     // 게시물 PID
+    // exchange_post 테이블이 chat_room 테이블에서 참조되기 전에 먼저 exchange_post 테이블 생성하고, chat_room 테이블 생성
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "exchange_pid", nullable = false)
+    @JoinColumn(name = "exchange_pid", referencedColumnName = "Pid", nullable = false)
     private ExchangePost exchangePost;
 
     // 신청자 UID
