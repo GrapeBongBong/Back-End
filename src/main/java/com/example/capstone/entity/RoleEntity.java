@@ -15,7 +15,6 @@ import javax.persistence.Table;
 @AllArgsConstructor
 @NoArgsConstructor
 public class RoleEntity {
-
     @Id
     @Column(name = "role_name", length = 50)
     private String roleName;

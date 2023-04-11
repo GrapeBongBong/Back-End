@@ -7,6 +7,7 @@ import com.example.capstone.jwt.TokenProvider;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -77,8 +78,10 @@ public class SecurityConfig {
                 .and()
                 .authorizeHttpRequests()
                 .antMatchers("/auth/login", "/auth/join").permitAll() // 로그인, 회원가입 API 는 토큰이 없는 상태에서 요청이 들어오기 때문에 permitAll 설정
-               // .requestMatchers(PathRequest.toH2Console()).permitAll()
+                .antMatchers(HttpMethod.POST, "/exchange/**").permitAll()
+                // .requestMatchers(PathRequest.toH2Console()).permitAll()
                 .anyRequest().authenticated()
+
 
                 .and()
                 .apply(new JwtSecurityConfig(tokenProvider));

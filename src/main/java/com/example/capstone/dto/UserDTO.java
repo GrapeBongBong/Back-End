@@ -1,15 +1,15 @@
 package com.example.capstone.dto;
 
 import com.example.capstone.entity.RoleEntity;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import org.springframework.security.core.userdetails.User;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserDTO {
@@ -24,4 +24,5 @@ public class UserDTO {
     private String address;
     private String talent; // 재능
     private String profile_img; // 프로필 이미지 url
+
 }
