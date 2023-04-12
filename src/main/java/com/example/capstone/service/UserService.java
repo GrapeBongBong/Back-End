@@ -1,6 +1,7 @@
 package com.example.capstone.service;
 
 import com.example.capstone.dto.UserDTO;
+import com.example.capstone.entity.RoleEntity;
 import com.example.capstone.entity.UserEntity;
 import com.example.capstone.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,32 +31,19 @@ public class UserService {
 
     public void join(UserDTO userDTO) {
 
-       /* Authority authority = Authority.builder()
-                .authorityName("ROLE_USER")
-                .build();*/
-
-        UserEntity newUser = UserEntity.builder()
-                .id(userDTO.getId())
-                .password(userDTO.getPassword())
-                .name(userDTO.getName())
-                .nick_name(userDTO.getNickName())
-                .birth(userDTO.getBirth())
-                .email(userDTO.getEmail())
-                .phone_num(userDTO.getPhoneNum())
-                .address(userDTO.getAddress())
-                .talent(userDTO.getTalent())
-                .profile_img(userDTO.getProfile_img())
-                //.authorities(Collections.singleton(authority))
+        RoleEntity role = RoleEntity.builder()
+                .roleName("ROLE_USER")
                 .build();
 
-        // UserEntity 객체의 authorities 필드에 권한 정보 저장
-//        newUser.setAuthorities(Collections.singleton(authority));
+        UserEntity newUser = UserEntity.toUserEntity(userDTO, role);
 
         // 사용자 비밀번호 암호화
         newUser.hashPassword(bCryptPasswordEncoder);
 
         // repository 의 save() 호출 (entity 객체 넘겨줘야 함)
         userRepository.save(newUser);
-        //System.out.println(newUser.getAuthorities());
+        System.out.println("newUser.getAuthorities = " + newUser.getRoles().toString());
+        System.out.println("newUser = " + newUser.toString());
+
     }
 }

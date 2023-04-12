@@ -16,6 +16,8 @@ import javax.persistence.Table;
 @NoArgsConstructor
 public class RoleEntity {
     @Id
+    private Long id;
+
     @Column(name = "role_name", length = 50)
     private String roleName;
 }

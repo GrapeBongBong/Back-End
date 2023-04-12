@@ -4,6 +4,7 @@ import com.example.capstone.dto.ExchangePostDTO;
 import com.example.capstone.repository.UserRepository;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.security.core.userdetails.User;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -32,7 +33,7 @@ public class ExchangePost extends Post {
     private Boolean status;
 
 
-    public static ExchangePost toExchangePost(ExchangePostDTO exchangePostDTO, UserEntity user) {
+    public static ExchangePost toExchangePost(ExchangePostDTO exchangePostDTO, User user) {
 
         ExchangePost exchangePost = new ExchangePost();
         exchangePost.setTitle(exchangePostDTO.getTitle());
@@ -45,7 +46,7 @@ public class ExchangePost extends Post {
         // 이미지 세팅 추가하기
         exchangePost.setStatus(true); // 재능거래 중
         exchangePost.setPostType(PostType.T);
-        exchangePost.setUser(user);
+//        exchangePost.setUser(user);
 
         return exchangePost;
     }

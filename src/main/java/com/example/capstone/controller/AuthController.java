@@ -2,12 +2,15 @@ package com.example.capstone.controller;
 
 import com.example.capstone.data.DataResponse;
 import com.example.capstone.dto.LoginDTO;
+import com.example.capstone.dto.TokenDTO;
 import com.example.capstone.dto.UserDTO;
 import com.example.capstone.data.BasicResponse;
+import com.example.capstone.entity.RoleEntity;
 import com.example.capstone.entity.UserEntity;
 import com.example.capstone.jwt.JwtFilter;
 import com.example.capstone.jwt.TokenProvider;
 import com.example.capstone.repository.UserRepository;
+import com.example.capstone.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -33,7 +36,7 @@ import javax.validation.Valid;
 @RequestMapping("/auth")
 public class AuthController {
 
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final TokenProvider tokenProvider;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final PasswordEncoder bCryptPasswordEncoder;
@@ -67,7 +70,7 @@ public class AuthController {
                     .code(200)
                     .httpStatus(HttpStatus.OK)
                     .message("로그인에 성공했습니다.")
-                    .data(httpHeaders)
+                    .data(new TokenDTO(jwt))
                     .build();
 
         } catch (Exception e) {
@@ -101,7 +104,6 @@ public class AuthController {
             "nickName": "홍길동",
             "birth": "1999-10-13",
             "email": "aaaa@naver.com",
-            "gender": "여자",
             "phoneNum": "01011112222",
             "address": "서울시 성북구",
             "talent": "재능",
@@ -110,32 +112,22 @@ public class AuthController {
 
         System.out.println("AuthController.join");
 
-
-
         BasicResponse basicResponse = new BasicResponse();
         try {
-            if (userRepository.findById(userDTO.getId()).orElse(null) != null) { // 이미 존재하는 아이디
+            if (userService.isUserIdExists(userDTO.getId()) != null) { // 이미 존재하는 아이디
                 basicResponse = BasicResponse.builder()
                         .code(409)
                         .httpStatus(HttpStatus.CONFLICT)
                         .message("이미 존재하는 아이디입니다.")
                         .build();
-            } else if (userRepository.findByEmail(userDTO.getEmail()).orElse(null) != null) {
+            } else if (userService.isUserEmailExists(userDTO.getEmail()) != null) {
                 basicResponse = BasicResponse.builder()
                         .code(408)
                         .httpStatus(HttpStatus.CONFLICT)
                         .message("이미 가입되어 있는 이메일입니다.")
                         .build();
             } else {
-
-                UserEntity newUser = UserEntity.toUserEntity(userDTO);
-
-                // 사용자 비밀번호 암호화
-                newUser.hashPassword(bCryptPasswordEncoder);
-
-                // repository 의 save() 호출 (entity 객체 넘겨줘야 함)
-                userRepository.save(newUser);
-
+                userService.join(userDTO);
                 basicResponse = BasicResponse.builder()
                         .code(200)
                         .httpStatus(HttpStatus.OK)

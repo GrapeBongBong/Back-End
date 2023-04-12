@@ -7,6 +7,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.persistence.*;
+import java.util.Collections;
 import java.util.Set;
 
 @Entity
@@ -14,6 +15,7 @@ import java.util.Set;
 @Setter
 @Table(name = "user_table")
 @Builder
+@ToString
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonAutoDetect
@@ -50,10 +52,6 @@ public class UserEntity {
 
     @Column
     @NonNull
-    private String gender;
-
-    @Column
-    @NonNull
     private String phone_num; // 01011112222
 
     @Column
@@ -85,7 +83,7 @@ public class UserEntity {
         return this;
     }
 
-    public static UserEntity toUserEntity(UserDTO userDTO) {
+    public static UserEntity toUserEntity(UserDTO userDTO, RoleEntity role) {
         UserEntity userEntity = new UserEntity();
 
         userEntity.setId(userDTO.getId());
@@ -94,13 +92,14 @@ public class UserEntity {
         userEntity.setNick_name(userDTO.getNickName());
         userEntity.setBirth(userDTO.getBirth());
         userEntity.setEmail(userDTO.getEmail());
-        userEntity.setGender(userDTO.getGender());
         userEntity.setPhone_num(userDTO.getPhoneNum());
         // activated 세팅 추가하기
         userEntity.setAddress(userDTO.getAddress());
         userEntity.setProfile_img(userDTO.getProfile_img());
         userEntity.setTalent(userDTO.getTalent());
-//        userEntity.setRoles(userDTO.getRole()); // 아직까지는 필요 없음
+        userEntity.setRoles(Collections.singleton(role));
+
+        System.out.println("userEntity.getRoles() = " + userEntity.getRoles().toString());
 
         return userEntity;
     }
