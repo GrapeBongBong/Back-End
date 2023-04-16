@@ -59,10 +59,10 @@ public class ExchangePostController {
             // 토큰 값 추출
             String token = request.getHeader("Authorization");
             System.out.println("Authorization = " + token);
-            System.out.println("User = " + user);
+//            System.out.println("User = " + user);
 
             // 헤더에 첨부되어 있는 token 에서 로그인 된 사용자 정보 받아옴
-            postService.save(exchangePostDTO, user); // null 나옴..
+//            postService.save(exchangePostDTO, user); // null 나옴..
 
            /* Claims claims= (Claims)tokenProvider.getAuthentication(token);
             System.out.println("clams = " + claims);
