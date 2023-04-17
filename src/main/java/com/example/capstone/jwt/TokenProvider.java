@@ -18,6 +18,7 @@ import java.security.Key;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
@@ -70,15 +71,20 @@ public class TokenProvider implements InitializingBean {
                 .getBody();
 
         //claim에서 권한 정보를 빼내어 user 객체를 만듦
-        Collection<? extends GrantedAuthority> authorities =
+        String authorities = claims.get(AUTHORITIES_KEY).toString();
+        List<GrantedAuthority> authorityList = Arrays.stream(authorities.split(","))
+                .map(auth -> new SimpleGrantedAuthority("ROLE_" + auth))
+                .collect(Collectors.toList());
+
+        /*Collection<? extends GrantedAuthority> authorities =
                 Arrays.stream(claims.get(AUTHORITIES_KEY).toString().split(","))
                         .map(SimpleGrantedAuthority::new)
-                        .collect(Collectors.toList());
+                        .collect(Collectors.toList());*/
 
         //여기서 user 객체는 org.springframework.security.core.userdetails의 User
-        User principal = new User(claims.getSubject(), "", authorities);
+        User principal = new User(claims.getSubject(), "", authorityList);
 
-        return new UsernamePasswordAuthenticationToken(principal, token, authorities);
+        return new UsernamePasswordAuthenticationToken(principal, token, authorityList);
     }
 
     //토큰의 유효성 검사

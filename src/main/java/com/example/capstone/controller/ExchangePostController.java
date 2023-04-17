@@ -23,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -49,7 +50,7 @@ public class ExchangePostController {
             @ApiResponse(responseCode = "400", description = "재능거래 게시물 등록에 실패했습니다.", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ExchangePost.class))})
     })
     @PostMapping("/post")
-    public ResponseEntity<DataResponse> createPost(@Valid @RequestBody ExchangePostDTO exchangePostDTO, HttpServletRequest request, @AuthenticationPrincipal User user) {
+    public ResponseEntity<DataResponse> createPost(@Valid @RequestBody ExchangePostDTO exchangePostDTO, HttpServletRequest request) {
 
         System.out.println("ExchangePostController.post");
 
@@ -59,7 +60,10 @@ public class ExchangePostController {
             // 토큰 값 추출
             String token = request.getHeader("Authorization");
             System.out.println("Authorization = " + token);
-//            System.out.println("User = " + user);
+
+            Authentication authentication = tokenProvider.getAuthentication(token);
+            UserDetails user = (UserDetails) authentication.getPrincipal();
+            System.out.println("User = " + user);
 
             // 헤더에 첨부되어 있는 token 에서 로그인 된 사용자 정보 받아옴
 //            postService.save(exchangePostDTO, user); // null 나옴..
