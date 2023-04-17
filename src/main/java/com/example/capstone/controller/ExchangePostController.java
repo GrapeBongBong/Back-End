@@ -39,7 +39,6 @@ import javax.validation.Valid;
 public class ExchangePostController {
 
     private final UserRepository userRepository;
-    private final PostRepository postRepository;
     private final TokenProvider tokenProvider;
     private final PostService postService;
 
@@ -61,12 +60,17 @@ public class ExchangePostController {
             String token = request.getHeader("Authorization");
             System.out.println("Authorization = " + token);
 
+            // 헤더에 첨부되어 있는 token 에서 로그인 된 사용자 정보 받아옴
             Authentication authentication = tokenProvider.getAuthentication(token);
             UserDetails user = (UserDetails) authentication.getPrincipal();
+            String id = authentication.getName();
             System.out.println("User = " + user);
+            System.out.println("id = " + id);
 
-            // 헤더에 첨부되어 있는 token 에서 로그인 된 사용자 정보 받아옴
-//            postService.save(exchangePostDTO, user); // null 나옴..
+            // UserEntity 프록시 객체를 가져온다.
+            UserEntity userEntity = userRepository.getOne(Long.valueOf(id));
+
+            postService.save(exchangePostDTO, userEntity);
 
            /* Claims claims= (Claims)tokenProvider.getAuthentication(token);
             System.out.println("clams = " + claims);

@@ -10,7 +10,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ExchangePostDTO {
-    private Long Uid; // 작성자 uid
     private String title; // 게시글 제목
     private String content; // 게시글 내용
     private String giveCate; // 주는 카테고리

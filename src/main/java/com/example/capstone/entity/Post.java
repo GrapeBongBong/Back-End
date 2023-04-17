@@ -2,6 +2,7 @@ package com.example.capstone.entity;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import javax.validation.constraints.Size;
@@ -42,7 +43,7 @@ public class Post {
 
     // 작성자
     @ManyToOne(fetch = FetchType.LAZY) // 지연 로딩 : 필요한 시점에 쿼리 실행하여 로딩
-    @JoinColumn(name = "Uid")
+    @JoinColumn(name = "Uid", referencedColumnName = "Uid")
     private UserEntity user;
     // 작성자
 

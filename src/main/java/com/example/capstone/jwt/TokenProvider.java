@@ -1,5 +1,6 @@
 package com.example.capstone.jwt;
 
+import com.example.capstone.entity.UserEntity;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -70,7 +71,6 @@ public class TokenProvider implements InitializingBean {
                 .parseClaimsJws(token)
                 .getBody();
 
-        //claim에서 권한 정보를 빼내어 user 객체를 만듦
         String authorities = claims.get(AUTHORITIES_KEY).toString();
         List<GrantedAuthority> authorityList = Arrays.stream(authorities.split(","))
                 .map(auth -> new SimpleGrantedAuthority("ROLE_" + auth))
@@ -81,7 +81,7 @@ public class TokenProvider implements InitializingBean {
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());*/
 
-        //여기서 user 객체는 org.springframework.security.core.userdetails의 User
+
         User principal = new User(claims.getSubject(), "", authorityList);
 
         return new UsernamePasswordAuthenticationToken(principal, token, authorityList);
