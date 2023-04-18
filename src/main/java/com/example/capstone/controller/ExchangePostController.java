@@ -20,8 +20,10 @@ import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.objenesis.ObjenesisHelper;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.util.Optional;
 
 @Api(tags = {"재능교환 게시물 관련 API"})
 @RestController
@@ -62,13 +65,24 @@ public class ExchangePostController {
 
             // 헤더에 첨부되어 있는 token 에서 로그인 된 사용자 정보 받아옴
             Authentication authentication = tokenProvider.getAuthentication(token);
-            UserDetails user = (UserDetails) authentication.getPrincipal();
-            String id = authentication.getName();
-            System.out.println("User = " + user);
-            System.out.println("id = " + id);
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+            String id = userDetails.getUsername(); // UserDetails 객체에서 사용자 아이디를 가져옴
+
+            // UserEntity를 사용자 아이디를 기반으로 조회
+            Optional<UserEntity> loggedInUserEntity = userRepository.findById(id); // 사용자 아이디를 기반으로 사용자 조회
+            UserEntity userEntity = null;
+            if (loggedInUserEntity.isPresent()) {
+                userEntity = loggedInUserEntity.get();
+                Long uid = userEntity.getUid(); // 가져온 UserEntity 객체에서 Uid를 가져옴
+                System.out.println("User = " + userEntity);
+                System.out.println("id = " + uid);
+            } else {
+                System.out.println("User not found");
+            }
 
             // UserEntity 프록시 객체를 가져온다.
-            UserEntity userEntity = userRepository.getOne(Long.valueOf(id));
+            //UserEntity userEntity = userRepository.getOne(Long.valueOf(id));
 
             postService.save(exchangePostDTO, userEntity);
 
