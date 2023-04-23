@@ -64,11 +64,10 @@ public class UserEntity {
 
     @Column
     @NonNull
-    private String talent;
+    private String gender;
 
     @Column
-    @NonNull
-    private String profile_img;
+    private String profile_img; // 기본값은 null
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -95,8 +94,8 @@ public class UserEntity {
         userEntity.setPhone_num(userDTO.getPhoneNum());
         // activated 세팅 추가하기
         userEntity.setAddress(userDTO.getAddress());
-        userEntity.setProfile_img(userDTO.getProfile_img());
-        userEntity.setTalent(userDTO.getTalent());
+        userEntity.setProfile_img(null); // 기본값 null
+        userEntity.setGender(userDTO.getGender());
         userEntity.setRoles(Collections.singleton(role));
 
         System.out.println("userEntity.getRoles() = " + userEntity.getRoles().toString());

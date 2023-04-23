@@ -106,8 +106,7 @@ public class AuthController {
             "email": "aaaa@naver.com",
             "phoneNum": "01011112222",
             "address": "서울시 성북구",
-            "talent": "재능",
-            "profile_img": "url_sample"
+            "gender": "여자"
         }*/
 
         System.out.println("AuthController.join");

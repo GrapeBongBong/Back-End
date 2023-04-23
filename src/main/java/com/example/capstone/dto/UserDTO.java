@@ -23,6 +23,5 @@ public class UserDTO {
     private String gender;
     private String phoneNum;
     private String address;
-    private String talent; // 재능
-    private String profile_img; // 프로필 이미지 url
+//    private String profile_img; // 프로필 이미지 url
 }
