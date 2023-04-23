@@ -72,19 +72,21 @@ public class ExchangePostController {
             // UserEntity를 사용자 아이디를 기반으로 조회
             Optional<UserEntity> loggedInUserEntity = userRepository.findById(id); // 사용자 아이디를 기반으로 사용자 조회
             UserEntity userEntity = null;
+
             if (loggedInUserEntity.isPresent()) {
                 userEntity = loggedInUserEntity.get();
                 Long uid = userEntity.getUid(); // 가져온 UserEntity 객체에서 Uid를 가져옴
                 System.out.println("User = " + userEntity);
-                System.out.println("id = " + uid);
+                System.out.println("uid = " + uid);
+
+                // 가져온 Uid 를 해당 포스트 컬럼에 추가
+                postService.save(exchangePostDTO, userEntity);
             } else {
                 System.out.println("User not found");
             }
 
             // UserEntity 프록시 객체를 가져온다.
             //UserEntity userEntity = userRepository.getOne(Long.valueOf(id));
-
-            postService.save(exchangePostDTO, userEntity);
 
            /* Claims claims= (Claims)tokenProvider.getAuthentication(token);
             System.out.println("clams = " + claims);

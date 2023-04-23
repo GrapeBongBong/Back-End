@@ -19,8 +19,8 @@ public class PostService {
 
     public void save(ExchangePostDTO exchangePostDTO, UserEntity userEntity) {
         ExchangePost exchangePost = ExchangePost.toExchangePost(exchangePostDTO);
-        // 받아온 사용자 정보를 이용해서 게시물의 작성자, 닉네임 등 설정
-//        exchangePost.setUser(userEntity);
+        // 받아온 사용자 정보를 이용해서 게시물 작성자 정보 저장
+        exchangePost.setUser(userEntity);
         postRepository.save(exchangePost);
     }
 }
