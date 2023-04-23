@@ -1,14 +1,12 @@
 package com.example.capstone.controller;
 
-import com.example.capstone.data.DataResponse;
+import com.example.capstone.data.LoginResponse;
 import com.example.capstone.dto.ExchangePostDTO;
 import com.example.capstone.entity.ExchangePost;
 import com.example.capstone.entity.UserEntity;
 import com.example.capstone.jwt.TokenProvider;
-import com.example.capstone.repository.PostRepository;
 import com.example.capstone.repository.UserRepository;
 import com.example.capstone.service.PostService;
-import io.jsonwebtoken.Claims;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,15 +14,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.crossstore.ChangeSetPersister;
-import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.objenesis.ObjenesisHelper;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -46,17 +38,17 @@ public class ExchangePostController {
     private final PostService postService;
 
     // 게시물 등록 API
-    @ApiOperation(value = "재능교환 게시물 등록", notes = "재능교환 게시물을 등록합니다.", response = DataResponse.class)
+    @ApiOperation(value = "재능교환 게시물 등록", notes = "재능교환 게시물을 등록합니다.", response = LoginResponse.class)
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "재능거래 게시물이 성공적으로 등록되었습니다.", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ExchangePost.class))}),
             @ApiResponse(responseCode = "400", description = "재능거래 게시물 등록에 실패했습니다.", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ExchangePost.class))})
     })
     @PostMapping("/post")
-    public ResponseEntity<DataResponse> createPost(@Valid @RequestBody ExchangePostDTO exchangePostDTO, HttpServletRequest request) {
+    public ResponseEntity<LoginResponse> createPost(@Valid @RequestBody ExchangePostDTO exchangePostDTO, HttpServletRequest request) {
 
         System.out.println("ExchangePostController.post");
 
-        DataResponse dataResponse = new DataResponse();
+        LoginResponse dataResponse = new LoginResponse();
 
         try {
             // 토큰 값 추출
@@ -96,14 +88,14 @@ public class ExchangePostController {
             /*// ExchangePostDTO 에서 Uid 값을 이용해 UserEntity 객체 조회
             UserEntity user = userRepository.findById(exchangePostDTO.getUid()).orElseThrow();*/
 
-            dataResponse = DataResponse.builder()
+            dataResponse = LoginResponse.builder()
                     .code(200)
                     .httpStatus(HttpStatus.OK)
                     .message("재능거래 게시물이 성공적으로 등록되었습니다.")
                     .build();
 
         } catch (Exception e) {
-            dataResponse = DataResponse.builder()
+            dataResponse = LoginResponse.builder()
                     .code(500)
                     .httpStatus(HttpStatus.UNAUTHORIZED)
                     .message("서버에 에러가 발생했습니다." + e)

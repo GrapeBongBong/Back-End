@@ -1,11 +1,10 @@
 package com.example.capstone.controller;
 
-import com.example.capstone.data.DataResponse;
+import com.example.capstone.data.LoginResponse;
 import com.example.capstone.dto.LoginDTO;
 import com.example.capstone.dto.TokenDTO;
 import com.example.capstone.dto.UserDTO;
 import com.example.capstone.data.BasicResponse;
-import com.example.capstone.entity.RoleEntity;
 import com.example.capstone.entity.UserEntity;
 import com.example.capstone.jwt.JwtFilter;
 import com.example.capstone.jwt.TokenProvider;
@@ -29,6 +28,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.Optional;
 
 @Api(tags = {"로그인 / 회원가입 API"})
 @RestController
@@ -39,51 +39,82 @@ public class AuthController {
     private final UserService userService;
     private final TokenProvider tokenProvider;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
-    private final PasswordEncoder bCryptPasswordEncoder;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    @ApiOperation(value = "로그인", notes = "아이디와 비밀번호를 입력받아 로그인합니다.", response = DataResponse.class)
+    @ApiOperation(value = "로그인", notes = "아이디와 비밀번호를 입력받아 로그인합니다.", response = LoginResponse.class)
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "로그인에 성공했습니다.", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = UserEntity.class))}),
             @ApiResponse(responseCode = "401", description = "비밀번호가 틀렸습니다.", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = UserEntity.class))})
     })
     @PostMapping("/login")
-    public ResponseEntity<DataResponse> login(@Valid @RequestBody LoginDTO loginDTO) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginDTO loginDTO) {
 
-        DataResponse basicResponse = new DataResponse();
+        LoginResponse loginResponse = new LoginResponse();
+        BasicResponse basicResponse = new BasicResponse();
 
         try {
-            // id와 userPassword로 authentication 토큰 생성
-            UsernamePasswordAuthenticationToken authenticationToken =
-                    new UsernamePasswordAuthenticationToken(loginDTO.getId(), loginDTO.getPassword());
+            String userId = loginDTO.getId();
+            String userPw = loginDTO.getPassword();
 
-            //
-            Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            // UserEntity를 사용자 아이디를 기반으로 조회
+            Optional<UserEntity> loggedInUserEntity = userRepository.findById(userId); // 사용자 아이디를 기반으로 사용자 조회
+            UserEntity userEntity = null;
 
-            //jwt token 발행
-            String jwt = tokenProvider.createToken(authentication);
+            if (loggedInUserEntity.isPresent()) {
+                userEntity = loggedInUserEntity.get();
+                if (passwordEncoder.matches(loginDTO.getPassword(), userEntity.getPassword())) { // 비밀번호가 맞으면
+                    // id와 userPassword로 authentication 토큰 생성
+                    UsernamePasswordAuthenticationToken authenticationToken =
+                            new UsernamePasswordAuthenticationToken(userId, userPw);
 
-            HttpHeaders httpHeaders = new HttpHeaders();
-            httpHeaders.add(JwtFilter.AUTHORIZATION_HEADER, "Bearer " + jwt);
+                    //
+                    Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            basicResponse = DataResponse.builder()
-                    .code(200)
-                    .httpStatus(HttpStatus.OK)
-                    .message("로그인에 성공했습니다.")
-                    .data(new TokenDTO(jwt))
-                    .build();
+                    //jwt token 발행
+                    String jwt = tokenProvider.createToken(authentication);
 
+                    HttpHeaders httpHeaders = new HttpHeaders();
+                    httpHeaders.add(JwtFilter.AUTHORIZATION_HEADER, "Bearer " + jwt);
+
+                    loginResponse = LoginResponse.builder()
+                            .code(200)
+                            .httpStatus(HttpStatus.OK)
+                            .message("로그인에 성공했습니다.")
+                            .token(jwt)
+                            .user(userEntity)
+                            .build();
+
+                    return new ResponseEntity<>(loginResponse, loginResponse.getHttpStatus());
+
+                } else { // 비밀번호 틀렸을 때
+                    basicResponse = BasicResponse.builder()
+                            .code(401)
+                            .httpStatus(HttpStatus.UNAUTHORIZED)
+                            .message("비밀번호가 틀렸습니다.")
+                            .build();
+
+                    return new ResponseEntity<>(basicResponse, basicResponse.getHttpStatus());
+                }
+            } else {
+                basicResponse = BasicResponse.builder()
+                        .code(404)
+                        .httpStatus(HttpStatus.NOT_FOUND)
+                        .message("가입되어 있지 않은 사용자입니다.")
+                        .build();
+
+                return new ResponseEntity<>(basicResponse, basicResponse.getHttpStatus());
+            }
         } catch (Exception e) {
-            basicResponse = DataResponse.builder()
-                    .code(401)
-                    .httpStatus(HttpStatus.UNAUTHORIZED)
-                    .message("비밀번호가 틀렸습니다.")
+            basicResponse = BasicResponse.builder()
+                    .code(500)
+                    .httpStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .message("서버에 예기치 않은 오류가 발생했습니다." + e)
                     .build();
+
+            return new ResponseEntity<>(basicResponse, basicResponse.getHttpStatus());
         }
-
-        return new ResponseEntity<>(basicResponse, basicResponse.getHttpStatus());
-
-//        return new ResponseEntity<>(new TokenDTO("로그인 성공 " + jwt), httpHeaders, HttpStatus.OK);
     }
 
     @ApiOperation(value = "회원가입", notes = "사용자 정보를 입력받아 등록합니다.")

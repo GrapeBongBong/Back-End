@@ -12,10 +12,8 @@ import javax.validation.constraints.Size;
 public class LoginDTO {
 
     @NotNull
-    @Size(min = 3, max = 50)
     private String id;
 
     @NotNull
-    @Size(min = 3, max = 100)
     private String password;
 }

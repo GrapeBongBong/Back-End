@@ -1,5 +1,7 @@
 package com.example.capstone.data;
 
+import com.example.capstone.dto.UserDTO;
+import com.example.capstone.entity.UserEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,9 +12,10 @@ import org.springframework.http.HttpStatus;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class DataResponse {
+public class LoginResponse {
     private Integer code;
     private HttpStatus httpStatus;
     private String message;
-    private Object data;
+    private String token;
+    private UserEntity user;
 }
