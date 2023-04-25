@@ -67,6 +67,10 @@ public class UserEntity {
     private String gender;
 
     @Column
+    @NonNull
+    private Double temperature;
+
+    @Column
     private String profile_img; // 기본값은 null
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -96,6 +100,7 @@ public class UserEntity {
         userEntity.setAddress(userDTO.getAddress());
         userEntity.setProfile_img(null); // 기본값 null
         userEntity.setGender(userDTO.getGender());
+        userEntity.setTemperature(36.5);
         userEntity.setRoles(Collections.singleton(role));
 
         System.out.println("userEntity.getRoles() = " + userEntity.getRoles().toString());
