@@ -181,4 +181,66 @@ public class ExchangePostController {
 
         return new ResponseEntity<>(basicResponse, basicResponse.getHttpStatus());
     }
+
+    @Transactional
+    @PutMapping("/post/{postId}")
+    public ResponseEntity<?> updatePost(@PathVariable Long postId, @RequestBody ExchangePostDTO exchangePostDTO, HttpServletRequest request) {
+        try {
+            // 토큰 값 추출
+            String token = request.getHeader("Authorization");
+            token = token.replaceAll("Bearer ", "");
+
+            // 토큰 검증
+            if (!tokenProvider.validateToken(token)) {
+                basicResponse = BasicResponse.builder()
+                        .code(401)
+                        .httpStatus(HttpStatus.UNAUTHORIZED)
+                        .message("유효하지 않은 토큰입니다.")
+                        .build();
+            } else {
+                // Pid 이용하여 게시글 조회
+                ExchangePost exchangePost = (ExchangePost) postRepository.findByPid(postId);
+
+                if (exchangePost == null) {
+                    basicResponse = BasicResponse.builder()
+                            .code(404)
+                            .httpStatus(HttpStatus.NOT_FOUND)
+                            .message("없거나 삭제된 게시글입니다.")
+                            .build();
+                } else {
+                    // 헤더에 첨부되어 있는 token 에서 로그인 된 사용자 정보 받아옴
+                    Authentication authentication = tokenProvider.getAuthentication(token);
+                    UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+                    String loggedInUserId = userDetails.getUsername(); // UserDetails 객체에서 사용자 아이디를 가져옴
+                    String postAuthorId = exchangePost.getUser().getId();
+
+                    // 본인이 작성한 게시글인지 확인
+                    if (!loggedInUserId.equals(postAuthorId)) { // 본인이 작성한 게시글이 아닌 경우
+                        basicResponse = BasicResponse.builder()
+                                .code(403)
+                                .httpStatus(HttpStatus.FORBIDDEN)
+                                .message("본인이 작성한 게시글이 아닙니다.")
+                                .build();
+                    } else { // 본인이 작성한 게시글인 경우
+                        postService.update(exchangePostDTO, exchangePost); // 게시글 수정
+
+                        basicResponse = BasicResponse.builder()
+                                .code(200)
+                                .httpStatus(HttpStatus.OK)
+                                .message("게시글을 성공적으로 수정했습니다.")
+                                .build();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            basicResponse = BasicResponse.builder()
+                    .code(500)
+                    .httpStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .message("서버에 에러가 발생했습니다." + e)
+                    .build();
+        }
+
+        return new ResponseEntity<>(basicResponse, basicResponse.getHttpStatus());
+    }
 }

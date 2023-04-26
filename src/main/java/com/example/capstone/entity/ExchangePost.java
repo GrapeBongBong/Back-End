@@ -69,7 +69,7 @@ public class ExchangePost extends Post {
         return exchangePost;
     }
 
-    private static String formatDate(LocalDateTime localDateTime) {
+    public static String formatDate(LocalDateTime localDateTime) {
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String formattedTime = localDateTime.format(dateTimeFormatter);
         return formattedTime;
