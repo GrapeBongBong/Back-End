@@ -141,7 +141,7 @@ public class ExchangePostController {
 
                 if (exchangePost == null) {
                     basicResponse = BasicResponse.builder()
-                            .code(403)
+                            .code(404)
                             .httpStatus(HttpStatus.NOT_FOUND)
                             .message("없거나 삭제된 게시글입니다.")
                             .build();
