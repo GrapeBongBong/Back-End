@@ -7,6 +7,7 @@ import com.example.capstone.dto.ExchangePostDTO;
 import com.example.capstone.entity.ExchangePost;
 import com.example.capstone.entity.UserEntity;
 import com.example.capstone.jwt.TokenProvider;
+import com.example.capstone.repository.PostRepository;
 import com.example.capstone.repository.UserRepository;
 import com.example.capstone.service.PostService;
 import io.swagger.annotations.Api;
@@ -16,10 +17,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,8 +37,10 @@ import java.util.Optional;
 public class ExchangePostController {
 
     private final UserRepository userRepository;
+    private final PostRepository postRepository;
     private final TokenProvider tokenProvider;
     private final PostService postService;
+    private BasicResponse basicResponse = new BasicResponse();
 
     // 게시물 등록 API
     @ApiOperation(value = "재능교환 게시물 등록", notes = "재능교환 게시물을 등록합니다.", response = LoginResponse.class)
@@ -46,8 +51,6 @@ public class ExchangePostController {
 
     @PostMapping("/post")
     public ResponseEntity<?> createPost(@Valid @RequestBody ExchangePostDTO exchangePostDTO, BindingResult bindingResult, HttpServletRequest request) {
-
-        BasicResponse basicResponse = new BasicResponse();
 
         // 필수정보 체크
         if (bindingResult.hasErrors()) {
@@ -106,7 +109,72 @@ public class ExchangePostController {
         } catch (Exception e) {
             basicResponse = BasicResponse.builder()
                     .code(500)
-                    .httpStatus(HttpStatus.UNAUTHORIZED)
+                    .httpStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .message("서버에 에러가 발생했습니다." + e)
+                    .build();
+        }
+
+        return new ResponseEntity<>(basicResponse, basicResponse.getHttpStatus());
+    }
+
+    @Transactional
+    @DeleteMapping("/delete/{postId}")
+    public ResponseEntity<?> deletePost(@PathVariable Long postId, HttpServletRequest request) {
+
+        System.out.println("delete_postId = " + postId);
+        try {
+            // 토큰 값 추출
+            String token = request.getHeader("Authorization");
+            token = token.replaceAll("Bearer ", "");
+            System.out.println("token = " + token);
+
+            // 토큰 검증
+            if (!tokenProvider.validateToken(token)) {
+                basicResponse = BasicResponse.builder()
+                        .code(401)
+                        .httpStatus(HttpStatus.UNAUTHORIZED)
+                        .message("유효하지 않은 토큰입니다.")
+                        .build();
+            } else {
+                // Pid 이용하여 게시글 조회
+                ExchangePost exchangePost = (ExchangePost) postRepository.findByPid(postId);
+
+                if (exchangePost == null) {
+                    basicResponse = BasicResponse.builder()
+                            .code(403)
+                            .httpStatus(HttpStatus.NOT_FOUND)
+                            .message("없거나 삭제된 게시글입니다.")
+                            .build();
+                } else {
+                    // 헤더에 첨부되어 있는 token 에서 로그인 된 사용자 정보 받아옴
+                    Authentication authentication = tokenProvider.getAuthentication(token);
+                    UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+                    String loggedInUserId = userDetails.getUsername(); // UserDetails 객체에서 사용자 아이디를 가져옴
+                    String postAuthorId = exchangePost.getUser().getId();
+
+                    // 본인이 작성한 게시글인지 확인
+                    if (!loggedInUserId.equals(postAuthorId)) { // 본인이 작성한 게시글이 아닌 경우
+                        basicResponse = BasicResponse.builder()
+                                .code(403)
+                                .httpStatus(HttpStatus.FORBIDDEN)
+                                .message("본인이 작성한 게시글이 아닙니다.")
+                                .build();
+                    } else { // 본인이 작성한 게시글인 경우
+                        postService.delete(exchangePost); // 게시글 삭제
+
+                        basicResponse = BasicResponse.builder()
+                                .code(200)
+                                .httpStatus(HttpStatus.OK)
+                                .message("게시글을 성공적으로 삭제했습니다.")
+                                .build();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            basicResponse = BasicResponse.builder()
+                    .code(500)
+                    .httpStatus(HttpStatus.INTERNAL_SERVER_ERROR)
                     .message("서버에 에러가 발생했습니다." + e)
                     .build();
         }

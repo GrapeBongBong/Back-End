@@ -21,4 +21,8 @@ public class PostService {
 
         postRepository.save(exchangePost);
     }
+
+    public void delete(ExchangePost exchangePost) {
+        postRepository.delete(exchangePost);
+    }
 }
