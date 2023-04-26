@@ -1,16 +1,17 @@
 package com.example.capstone.entity;
 
+import com.example.capstone.data.AvailableTime;
+import com.example.capstone.data.StringArrayConverter;
 import com.example.capstone.dto.ExchangePostDTO;
-import com.example.capstone.repository.UserRepository;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.List;
 
 @Entity
 @Getter
@@ -39,6 +40,12 @@ public class ExchangePost extends Post {
     @NonNull
     private Boolean status;
 
+    @NonNull
+    @Convert(converter = StringArrayConverter.class)
+    private String[] days;
+
+    @NonNull
+    private String timezone;
 
     public static ExchangePost toExchangePost(ExchangePostDTO exchangePostDTO) {
 
@@ -53,6 +60,11 @@ public class ExchangePost extends Post {
         // 이미지 세팅 추가하기
         exchangePost.setStatus(true); // 재능거래 중
         exchangePost.setPostType(PostType.T);
+
+        // 시간대 정보 저장
+        AvailableTime availableTime = exchangePostDTO.getAvailableTime();
+        exchangePost.setDays(availableTime.getDays());
+        exchangePost.setTimezone(availableTime.getTimezone());
 
         return exchangePost;
     }

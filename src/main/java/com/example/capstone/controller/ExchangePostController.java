@@ -1,5 +1,7 @@
 package com.example.capstone.controller;
 
+import com.example.capstone.data.AvailableTime;
+import com.example.capstone.data.BasicResponse;
 import com.example.capstone.data.LoginResponse;
 import com.example.capstone.dto.ExchangePostDTO;
 import com.example.capstone.entity.ExchangePost;
@@ -18,10 +20,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
@@ -43,17 +43,35 @@ public class ExchangePostController {
             @ApiResponse(responseCode = "200", description = "재능거래 게시물이 성공적으로 등록되었습니다.", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ExchangePost.class))}),
             @ApiResponse(responseCode = "400", description = "재능거래 게시물 등록에 실패했습니다.", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ExchangePost.class))})
     })
+
     @PostMapping("/post")
-    public ResponseEntity<LoginResponse> createPost(@Valid @RequestBody ExchangePostDTO exchangePostDTO, HttpServletRequest request) {
+    public ResponseEntity<?> createPost(@Valid @RequestBody ExchangePostDTO exchangePostDTO, BindingResult bindingResult, HttpServletRequest request) {
 
-        System.out.println("ExchangePostController.post");
+        BasicResponse basicResponse = new BasicResponse();
 
-        LoginResponse dataResponse = new LoginResponse();
+        // 필수정보 체크
+        if (bindingResult.hasErrors()) {
+            basicResponse = BasicResponse.builder()
+                    .code(403)
+                    .httpStatus(HttpStatus.BAD_REQUEST)
+                    .message("필수 정보가 없습니다.")
+                    .build();
+            return new ResponseEntity<>(basicResponse, basicResponse.getHttpStatus());
+        }
 
         try {
             // 토큰 값 추출
             String token = request.getHeader("Authorization");
             System.out.println("Authorization = " + token);
+
+            // 토큰 검증
+            if (!tokenProvider.validateToken(token)) {
+                basicResponse = BasicResponse.builder()
+                        .code(401)
+                        .httpStatus(HttpStatus.UNAUTHORIZED)
+                        .message("JWT 토큰이 만료되었습니다.")
+                        .build();
+            }
 
             // 헤더에 첨부되어 있는 token 에서 로그인 된 사용자 정보 받아옴
             Authentication authentication = tokenProvider.getAuthentication(token);
@@ -73,35 +91,26 @@ public class ExchangePostController {
 
                 // 가져온 Uid 를 해당 포스트 컬럼에 추가
                 postService.save(exchangePostDTO, userEntity);
+                basicResponse = BasicResponse.builder()
+                        .code(201)
+                        .httpStatus(HttpStatus.OK)
+                        .message("재능거래 게시물이 성공적으로 등록되었습니다.")
+                        .build();
             } else {
-                System.out.println("User not found");
+                basicResponse = BasicResponse.builder()
+                        .code(404)
+                        .httpStatus(HttpStatus.NOT_FOUND)
+                        .message("회원이 아닙니다.")
+                        .build();
             }
-
-            // UserEntity 프록시 객체를 가져온다.
-            //UserEntity userEntity = userRepository.getOne(Long.valueOf(id));
-
-           /* Claims claims= (Claims)tokenProvider.getAuthentication(token);
-            System.out.println("clams = " + claims);
-            String userId = claims.get("userId", String.class);
-            System.out.println("가져온 userId = " + userId);*/
-
-            /*// ExchangePostDTO 에서 Uid 값을 이용해 UserEntity 객체 조회
-            UserEntity user = userRepository.findById(exchangePostDTO.getUid()).orElseThrow();*/
-
-            dataResponse = LoginResponse.builder()
-                    .code(200)
-                    .httpStatus(HttpStatus.OK)
-                    .message("재능거래 게시물이 성공적으로 등록되었습니다.")
-                    .build();
-
         } catch (Exception e) {
-            dataResponse = LoginResponse.builder()
+            basicResponse = BasicResponse.builder()
                     .code(500)
                     .httpStatus(HttpStatus.UNAUTHORIZED)
                     .message("서버에 에러가 발생했습니다." + e)
                     .build();
         }
 
-        return new ResponseEntity<>(dataResponse, dataResponse.getHttpStatus());
+        return new ResponseEntity<>(basicResponse, basicResponse.getHttpStatus());
     }
 }
