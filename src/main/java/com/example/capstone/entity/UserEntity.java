@@ -38,9 +38,9 @@ public class UserEntity {
     @NonNull
     private String name;
 
-    @Column
+    @Column(name="nick_name")
     @NonNull
-    private String nick_name;
+    private String nickName;
 
     @Column
     @NonNull
@@ -80,6 +80,7 @@ public class UserEntity {
             inverseJoinColumns = {@JoinColumn(name = "role_name", referencedColumnName = "role_name")})
     private Set<RoleEntity> roles;
 
+
     // 비밀번호 암호화
     public UserEntity hashPassword(PasswordEncoder passwordEncoder) {
         this.password = passwordEncoder.encode(this.password);
@@ -92,7 +93,7 @@ public class UserEntity {
         userEntity.setId(userDTO.getId());
         userEntity.setPassword(userDTO.getPassword());
         userEntity.setName(userDTO.getName());
-        userEntity.setNick_name(userDTO.getNickName());
+        userEntity.setNickName(userDTO.getNickName());
         userEntity.setBirth(userDTO.getBirth());
         userEntity.setEmail(userDTO.getEmail());
         userEntity.setPhone_num(userDTO.getPhoneNum());
@@ -107,4 +108,5 @@ public class UserEntity {
 
         return userEntity;
     }
+
 }
