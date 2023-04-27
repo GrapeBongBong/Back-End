@@ -4,6 +4,7 @@ import com.example.capstone.data.BasicResponse;
 import com.example.capstone.dto.UserProfileDTO;
 import com.example.capstone.jwt.TokenProvider;
 import com.example.capstone.service.UserProfileService;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.swagger.annotations.Api;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,9 @@ public class UserProfileController {
 
     @PutMapping("/{userId}/profile")
     public ResponseEntity<?> updateUserProfile(@PathVariable String userId, @RequestBody UserProfileDTO userProfileDTO, HttpServletRequest request) {
+
+        responseJson = JsonNodeFactory.instance.objectNode();
+
         try {
             // 토큰 값 추출
             String token = request.getHeader("Authorization");
