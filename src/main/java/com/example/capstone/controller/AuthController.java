@@ -2,14 +2,15 @@ package com.example.capstone.controller;
 
 import com.example.capstone.data.LoginResponse;
 import com.example.capstone.dto.LoginDTO;
-import com.example.capstone.dto.TokenDTO;
 import com.example.capstone.dto.UserDTO;
-import com.example.capstone.data.BasicResponse;
 import com.example.capstone.entity.UserEntity;
 import com.example.capstone.jwt.JwtFilter;
 import com.example.capstone.jwt.TokenProvider;
 import com.example.capstone.repository.UserRepository;
 import com.example.capstone.service.UserService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -19,6 +20,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -41,6 +43,7 @@ public class AuthController {
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private ObjectNode responseJson;
 
     @ApiOperation(value = "로그인", notes = "아이디와 비밀번호를 입력받아 로그인합니다.", response = LoginResponse.class)
     @ApiResponses(value = {
@@ -50,8 +53,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginDTO loginDTO) {
 
-        LoginResponse loginResponse = new LoginResponse();
-        BasicResponse basicResponse = new BasicResponse();
+        responseJson = JsonNodeFactory.instance.objectNode();
 
         try {
             String userId = loginDTO.getId();
@@ -78,42 +80,37 @@ public class AuthController {
                     HttpHeaders httpHeaders = new HttpHeaders();
                     httpHeaders.add(JwtFilter.AUTHORIZATION_HEADER, "Bearer " + jwt);
 
-                    loginResponse = LoginResponse.builder()
-                            .code(200)
-                            .httpStatus(HttpStatus.OK)
-                            .message("로그인에 성공했습니다.")
-                            .token(jwt)
-                            .user(userEntity)
-                            .build();
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    String userJson = objectMapper.writeValueAsString(userEntity);
 
-                    return new ResponseEntity<>(loginResponse, loginResponse.getHttpStatus());
+                    responseJson.put("message", "로그인에 성공했습니다.");
+                    responseJson.put("token", jwt);
+                    responseJson.put("user", userJson);
+
+                    return ResponseEntity.status(HttpStatus.OK)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
 
                 } else { // 비밀번호 틀렸을 때
-                    basicResponse = BasicResponse.builder()
-                            .code(401)
-                            .httpStatus(HttpStatus.UNAUTHORIZED)
-                            .message("비밀번호가 틀렸습니다.")
-                            .build();
+                    responseJson.put("message", "비밀번호가 틀렸습니다.");
 
-                    return new ResponseEntity<>(basicResponse, basicResponse.getHttpStatus());
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
                 }
             } else {
-                basicResponse = BasicResponse.builder()
-                        .code(404)
-                        .httpStatus(HttpStatus.NOT_FOUND)
-                        .message("가입되어 있지 않은 사용자입니다.")
-                        .build();
+                responseJson.put("message", "가입되어 있지 않은 사용자입니다.");
 
-                return new ResponseEntity<>(basicResponse, basicResponse.getHttpStatus());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(responseJson);
             }
         } catch (Exception e) {
-            basicResponse = BasicResponse.builder()
-                    .code(500)
-                    .httpStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .message("서버에 예기치 않은 오류가 발생했습니다." + e)
-                    .build();
+            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
 
-            return new ResponseEntity<>(basicResponse, basicResponse.getHttpStatus());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(responseJson);
         }
     }
 
@@ -122,11 +119,10 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "회원가입에 성공했습니다.", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = UserEntity.class))}),
             @ApiResponse(responseCode = "408", description = "이미 가입되어 있는 이메일입니다.", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = UserEntity.class))}),
             @ApiResponse(responseCode = "409", description = "이미 존재하는 아이디입니다.", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = UserEntity.class))}),
-            @ApiResponse(responseCode = "404", description = "서버에 문제가 생겼습니다.", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = UserEntity.class))})
+            @ApiResponse(responseCode = "500", description = "서버에 문제가 생겼습니다.", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = UserEntity.class))})
     })
     @PostMapping("/join")
-    public ResponseEntity<BasicResponse> join(@RequestBody UserDTO userDTO) {
-
+    public ResponseEntity<?> join(@RequestBody UserDTO userDTO) {
 
        /* {
             "id": "1111",
@@ -142,36 +138,35 @@ public class AuthController {
 
         System.out.println("AuthController.join");
 
-        BasicResponse basicResponse = new BasicResponse();
         try {
             if (userService.isUserIdExists(userDTO.getId()) != null) { // 이미 존재하는 아이디
-                basicResponse = BasicResponse.builder()
-                        .code(409)
-                        .httpStatus(HttpStatus.CONFLICT)
-                        .message("이미 존재하는 아이디입니다.")
-                        .build();
+                responseJson.put("message", "이미 존재하는 아이디입니다.");
+
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(responseJson);
+
             } else if (userService.isUserEmailExists(userDTO.getEmail()) != null) {
-                basicResponse = BasicResponse.builder()
-                        .code(408)
-                        .httpStatus(HttpStatus.CONFLICT)
-                        .message("이미 가입되어 있는 이메일입니다.")
-                        .build();
+                responseJson.put("message", "이미 가입되어 있는 이메일입니다.");
+
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(responseJson);
+
             } else {
                 userService.join(userDTO);
-                basicResponse = BasicResponse.builder()
-                        .code(200)
-                        .httpStatus(HttpStatus.OK)
-                        .message("회원가입에 성공했습니다.")
-                        .build();
+                responseJson.put("message", "회원가입에 성공했습니다.");
+
+                return ResponseEntity.status(HttpStatus.OK)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(responseJson);
             }
         } catch (Exception e) {
-            basicResponse = BasicResponse.builder()
-                    .code(500)
-                    .httpStatus(HttpStatus.NOT_FOUND)
-                    .message("서버에 에러가 발생했습니다." + e)
-                    .build();
-        }
+            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
 
-        return new ResponseEntity<>(basicResponse, basicResponse.getHttpStatus());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(responseJson);
+        }
     }
 }
