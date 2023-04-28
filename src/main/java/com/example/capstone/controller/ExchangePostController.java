@@ -1,7 +1,5 @@
 package com.example.capstone.controller;
 
-import com.example.capstone.data.AvailableTime;
-import com.example.capstone.data.BasicResponse;
 import com.example.capstone.data.LoginResponse;
 import com.example.capstone.dto.ExchangePostDTO;
 import com.example.capstone.entity.ExchangePost;
@@ -19,7 +17,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.util.List;
 import java.util.Optional;
 
 @Api(tags = {"재능교환 게시물 관련 API"})
@@ -254,4 +252,24 @@ public class ExchangePostController {
                     .body(responseJson);
         }
     }
+
+    /*@GetMapping("/posts")
+    public ResponseEntity<?> getPostList() {
+        try {
+            List<ExchangePostDTO> postList = postService.getPostList();
+            responseJson = JsonNodeFactory.instance.objectNode();
+
+            return ResponseEntity.status(HttpStatus.OK)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(postList);
+
+        } catch (Exception e) {
+            responseJson = JsonNodeFactory.instance.objectNode();
+            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(responseJson);
+        }
+    }*/
 }

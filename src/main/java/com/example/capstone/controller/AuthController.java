@@ -53,8 +53,6 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginDTO loginDTO) {
 
-        responseJson = JsonNodeFactory.instance.objectNode();
-
         try {
             String userId = loginDTO.getId();
             String userPw = loginDTO.getPassword();
@@ -83,6 +81,7 @@ public class AuthController {
                     ObjectMapper objectMapper = new ObjectMapper();
                     String userJson = objectMapper.writeValueAsString(userEntity);
 
+                    responseJson = JsonNodeFactory.instance.objectNode();
                     responseJson.put("message", "로그인에 성공했습니다.");
                     responseJson.put("token", jwt);
                     responseJson.put("user", userJson);
@@ -92,6 +91,7 @@ public class AuthController {
                             .body(responseJson);
 
                 } else { // 비밀번호 틀렸을 때
+                    responseJson = JsonNodeFactory.instance.objectNode();
                     responseJson.put("message", "비밀번호가 틀렸습니다.");
 
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -99,6 +99,7 @@ public class AuthController {
                             .body(responseJson);
                 }
             } else {
+                responseJson = JsonNodeFactory.instance.objectNode();
                 responseJson.put("message", "가입되어 있지 않은 사용자입니다.");
 
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -106,6 +107,7 @@ public class AuthController {
                         .body(responseJson);
             }
         } catch (Exception e) {
+            responseJson = JsonNodeFactory.instance.objectNode();
             responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -140,6 +142,7 @@ public class AuthController {
 
         try {
             if (userService.isUserIdExists(userDTO.getId()) != null) { // 이미 존재하는 아이디
+                responseJson = JsonNodeFactory.instance.objectNode();
                 responseJson.put("message", "이미 존재하는 아이디입니다.");
 
                 return ResponseEntity.status(HttpStatus.CONFLICT)
@@ -147,6 +150,7 @@ public class AuthController {
                         .body(responseJson);
 
             } else if (userService.isUserEmailExists(userDTO.getEmail()) != null) {
+                responseJson = JsonNodeFactory.instance.objectNode();
                 responseJson.put("message", "이미 가입되어 있는 이메일입니다.");
 
                 return ResponseEntity.status(HttpStatus.CONFLICT)
@@ -155,6 +159,7 @@ public class AuthController {
 
             } else {
                 userService.join(userDTO);
+                responseJson = JsonNodeFactory.instance.objectNode();
                 responseJson.put("message", "회원가입에 성공했습니다.");
 
                 return ResponseEntity.status(HttpStatus.OK)
@@ -162,6 +167,7 @@ public class AuthController {
                         .body(responseJson);
             }
         } catch (Exception e) {
+            responseJson = JsonNodeFactory.instance.objectNode();
             responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
