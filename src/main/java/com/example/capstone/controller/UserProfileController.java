@@ -29,8 +29,6 @@ public class UserProfileController {
     @PutMapping("/{userId}/profile")
     public ResponseEntity<?> updateUserProfile(@PathVariable String userId, @RequestBody UserProfileDTO userProfileDTO, HttpServletRequest request) {
 
-        responseJson = JsonNodeFactory.instance.objectNode();
-
         try {
             // 토큰 값 추출
             String token = request.getHeader("Authorization");
@@ -38,6 +36,7 @@ public class UserProfileController {
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
+                responseJson = JsonNodeFactory.instance.objectNode();
                 responseJson.put("message", "유효하지 않은 토큰입니다.");
 
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -54,6 +53,7 @@ public class UserProfileController {
                 // 유저 프로필 수정
                 UserProfileDTO updatedUserProfile = userProfileService.updateUserProfile(loggedInUserId, userProfileDTO);
 
+                responseJson = JsonNodeFactory.instance.objectNode();
                 responseJson.put("message", "사용자 프로필을 성공적으로 수정했습니다.");
 
                 return ResponseEntity.status(HttpStatus.OK)
@@ -61,6 +61,7 @@ public class UserProfileController {
                         .body(responseJson);
             }
         } catch (Exception e) {
+            responseJson = JsonNodeFactory.instance.objectNode();
             responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

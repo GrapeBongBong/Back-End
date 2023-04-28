@@ -8,6 +8,7 @@ import com.example.capstone.repository.PostRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static com.example.capstone.entity.ExchangePost.formatDate;
 
@@ -45,4 +46,8 @@ public class PostService {
         exchangePost.setDays(availableTime.getDays());
         exchangePost.setTimezone(availableTime.getTimezone());
     }
+
+//    public List<ExchangePostDTO> getPostList() {
+//
+//    }
 }
