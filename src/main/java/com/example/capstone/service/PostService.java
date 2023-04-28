@@ -9,6 +9,7 @@ import com.example.capstone.repository.PostRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,11 +21,9 @@ import static com.example.capstone.entity.ExchangePost.formatDate;
 @Service
 public class PostService {
     private final PostRepository postRepository;
-    private final ModelMapper modelMapper;
 
-    public PostService(PostRepository postRepository, ModelMapper modelMapper) {
+    public PostService(PostRepository postRepository) {
         this.postRepository = postRepository;
-        this.modelMapper = modelMapper;
     }
 
     public void save(ExchangePostDTO exchangePostDTO, UserEntity userEntity) {
@@ -54,7 +53,7 @@ public class PostService {
         exchangePost.setTimezone(availableTime.getTimezone());
     }
 
-    public Set<ExchangePostDTO> getPostList() {
+    /*public Set<ExchangePostDTO> getPostList() {
         List<ExchangePost[]> postList = postRepository.findPosts(); // entity
         // entity -> dto
         Set<ExchangePostDTO> exchangePostDTOList = postList.stream()
@@ -63,5 +62,9 @@ public class PostService {
 
         System.out.println("exchangePostDTOList = " + exchangePostDTOList);
         return exchangePostDTOList;
+    }*/
+
+    public List<Post> getExchangePostList() {
+        return postRepository.findAll();
     }
 }

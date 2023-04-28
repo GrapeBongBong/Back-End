@@ -4,11 +4,14 @@ import com.example.capstone.data.LoginResponse;
 import com.example.capstone.dto.ExchangePostDTO;
 import com.example.capstone.entity.ExchangePost;
 import com.example.capstone.entity.Post;
+import com.example.capstone.entity.PostType;
 import com.example.capstone.entity.UserEntity;
 import com.example.capstone.jwt.TokenProvider;
 import com.example.capstone.repository.PostRepository;
 import com.example.capstone.repository.UserRepository;
 import com.example.capstone.service.PostService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.swagger.annotations.Api;
@@ -29,6 +32,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -255,6 +259,7 @@ public class ExchangePostController {
         }
     }
 
+    @Transactional
     @GetMapping("/posts")
     public ResponseEntity<?> getPostList(HttpServletRequest request) {
         try {
@@ -270,12 +275,19 @@ public class ExchangePostController {
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(responseJson);
             } else {
-                Set<ExchangePostDTO> exchangePostList = postService.getPostList();
-                System.out.println("exchangePostList = " + exchangePostList);
+                // exchangePost 타입만 가져오기
+                List<ExchangePost> exchangePostList = (List<ExchangePost>) postRepository.findByPostType(PostType.T);
+                List<ExchangePostDTO> exchangePostDTOList = ExchangePostDTO.toExchangePostDTO(exchangePostList);
+
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode exchangePosts = objectMapper.convertValue(exchangePostDTOList, JsonNode.class);
+
+                responseJson = JsonNodeFactory.instance.objectNode();
+                responseJson.set("posts", exchangePosts);
 
                 return ResponseEntity.status(HttpStatus.OK)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .body(exchangePostList);
+                        .body(responseJson);
             }
 
         } catch (Exception e) {

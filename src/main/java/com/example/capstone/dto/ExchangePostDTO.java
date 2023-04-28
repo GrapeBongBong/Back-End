@@ -9,17 +9,14 @@ import lombok.Setter;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExchangePostDTO {
-    @NotBlank
-    private String title; // 게시글 제목
-
-    @NotBlank
-    private String content; // 게시글 내용
+public class ExchangePostDTO extends PostDTO{
 
     @NotBlank
     private String giveCate; // 주는 카테고리
@@ -36,4 +33,31 @@ public class ExchangePostDTO {
     private AvailableTime availableTime; // 가능한 시간대
 
     // 이미지 필드 추가
+
+    public static List<ExchangePostDTO> toExchangePostDTO(List<ExchangePost> exchangePostList) {
+        List<ExchangePostDTO> exchangePostDTOList = new ArrayList<>();
+
+        for (ExchangePost exchangePost: exchangePostList) {
+            ExchangePostDTO exchangePostDTO = new ExchangePostDTO();
+            exchangePostDTO.setPid(exchangePost.getPid());
+            exchangePostDTO.setWriterNick(exchangePost.getUser().getNickName()); // 작성자 닉네임
+            exchangePostDTO.setWriterId(exchangePost.getUser().getId());
+            exchangePostDTO.setDate(exchangePost.getDate());
+            exchangePostDTO.setTitle(exchangePost.getTitle());
+            exchangePostDTO.setContent(exchangePost.getContent());
+            exchangePostDTO.setGiveCate(exchangePost.getGiveCate());
+            exchangePostDTO.setGiveTalent(exchangePost.getGiveTalent());
+            exchangePostDTO.setTakeCate(exchangePost.getTakeCate());
+            exchangePostDTO.setTakeTalent(exchangePost.getTakeTalent());
+
+            AvailableTime availableTimeDTO = new AvailableTime();
+            availableTimeDTO.setDays(exchangePost.getDays());
+            availableTimeDTO.setTimezone(exchangePost.getTimezone());
+            exchangePostDTO.setAvailableTime(availableTimeDTO);
+
+            exchangePostDTOList.add(exchangePostDTO);
+        }
+
+        return exchangePostDTOList;
+    }
 }
