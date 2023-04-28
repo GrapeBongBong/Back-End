@@ -26,7 +26,7 @@ public class UserProfileController {
     private final TokenProvider tokenProvider;
     private ObjectNode responseJson;
 
-    @PutMapping("/{userId}/profile")
+    @PutMapping("/profile/{userId}")
     public ResponseEntity<?> updateUserProfile(@PathVariable String userId, @RequestBody UserProfileDTO userProfileDTO, HttpServletRequest request) {
 
         responseJson = JsonNodeFactory.instance.objectNode();
