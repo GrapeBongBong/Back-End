@@ -47,7 +47,7 @@ public class ExchangePost extends Post {
     @NonNull
     private String timezone;
 
-    public static ExchangePost toExchangePost(ExchangePostDTO exchangePostDTO) {
+    public static ExchangePost toExchangePost(ExchangePostDTO exchangePostDTO) { // dto -> entity
 
         ExchangePost exchangePost = new ExchangePost();
         exchangePost.setTitle(exchangePostDTO.getTitle());

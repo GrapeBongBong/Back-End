@@ -1,6 +1,7 @@
 package com.example.capstone.dto;
 
 import com.example.capstone.data.AvailableTime;
+import com.example.capstone.entity.ExchangePost;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

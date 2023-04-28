@@ -3,21 +3,28 @@ package com.example.capstone.service;
 import com.example.capstone.data.AvailableTime;
 import com.example.capstone.dto.ExchangePostDTO;
 import com.example.capstone.entity.ExchangePost;
+import com.example.capstone.entity.Post;
 import com.example.capstone.entity.UserEntity;
 import com.example.capstone.repository.PostRepository;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.example.capstone.entity.ExchangePost.formatDate;
 
 @Service
 public class PostService {
     private final PostRepository postRepository;
+    private final ModelMapper modelMapper;
 
-    public PostService(PostRepository postRepository) {
+    public PostService(PostRepository postRepository, ModelMapper modelMapper) {
         this.postRepository = postRepository;
+        this.modelMapper = modelMapper;
     }
 
     public void save(ExchangePostDTO exchangePostDTO, UserEntity userEntity) {
@@ -47,7 +54,14 @@ public class PostService {
         exchangePost.setTimezone(availableTime.getTimezone());
     }
 
-//    public List<ExchangePostDTO> getPostList() {
-//
-//    }
+    public Set<ExchangePostDTO> getPostList() {
+        List<ExchangePost[]> postList = postRepository.findPosts(); // entity
+        // entity -> dto
+        Set<ExchangePostDTO> exchangePostDTOList = postList.stream()
+                .map(post -> modelMapper.map(post, ExchangePostDTO.class))
+                .collect(Collectors.toSet());
+
+        System.out.println("exchangePostDTOList = " + exchangePostDTOList);
+        return exchangePostDTOList;
+    }
 }

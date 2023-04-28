@@ -58,6 +58,9 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	implementation 'org.springframework:spring-web:5.3.9'
+
+	// ModelMapper
+	implementation 'org.modelmapper:modelmapper:2.4.4'
 }
 
 dependencyManagement {

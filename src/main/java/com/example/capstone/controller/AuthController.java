@@ -8,6 +8,7 @@ import com.example.capstone.jwt.JwtFilter;
 import com.example.capstone.jwt.TokenProvider;
 import com.example.capstone.repository.UserRepository;
 import com.example.capstone.service.UserService;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -79,12 +80,12 @@ public class AuthController {
                     httpHeaders.add(JwtFilter.AUTHORIZATION_HEADER, "Bearer " + jwt);
 
                     ObjectMapper objectMapper = new ObjectMapper();
-                    String userJson = objectMapper.writeValueAsString(userEntity);
+                    JsonNode user = objectMapper.convertValue(userEntity, JsonNode.class); // userEntity 객체 JsonNode 로 변환
 
                     responseJson = JsonNodeFactory.instance.objectNode();
                     responseJson.put("message", "로그인에 성공했습니다.");
                     responseJson.put("token", jwt);
-                    responseJson.put("user", userJson);
+                    responseJson.set("user", user);
 
                     return ResponseEntity.status(HttpStatus.OK)
                             .contentType(MediaType.APPLICATION_JSON)

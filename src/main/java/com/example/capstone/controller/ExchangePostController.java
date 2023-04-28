@@ -3,6 +3,7 @@ package com.example.capstone.controller;
 import com.example.capstone.data.LoginResponse;
 import com.example.capstone.dto.ExchangePostDTO;
 import com.example.capstone.entity.ExchangePost;
+import com.example.capstone.entity.Post;
 import com.example.capstone.entity.UserEntity;
 import com.example.capstone.jwt.TokenProvider;
 import com.example.capstone.repository.PostRepository;
@@ -30,6 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Api(tags = {"재능교환 게시물 관련 API"})
 @RestController
@@ -253,15 +255,28 @@ public class ExchangePostController {
         }
     }
 
-    /*@GetMapping("/posts")
-    public ResponseEntity<?> getPostList() {
+    @GetMapping("/posts")
+    public ResponseEntity<?> getPostList(HttpServletRequest request) {
         try {
-            List<ExchangePostDTO> postList = postService.getPostList();
-            responseJson = JsonNodeFactory.instance.objectNode();
+            // 토큰 값 추출
+            String token = request.getHeader("Authorization");
+            token = token.replaceAll("Bearer ", "");
 
-            return ResponseEntity.status(HttpStatus.OK)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(postList);
+            // 토큰 검증
+            if (!tokenProvider.validateToken(token)) {
+                responseJson.put("message", "유효하지 않은 토큰입니다.");
+
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(responseJson);
+            } else {
+                Set<ExchangePostDTO> exchangePostList = postService.getPostList();
+                System.out.println("exchangePostList = " + exchangePostList);
+
+                return ResponseEntity.status(HttpStatus.OK)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(exchangePostList);
+            }
 
         } catch (Exception e) {
             responseJson = JsonNodeFactory.instance.objectNode();
@@ -271,5 +286,5 @@ public class ExchangePostController {
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(responseJson);
         }
-    }*/
+    }
 }
