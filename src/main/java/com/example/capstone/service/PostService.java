@@ -52,19 +52,4 @@ public class PostService {
         exchangePost.setDays(availableTime.getDays());
         exchangePost.setTimezone(availableTime.getTimezone());
     }
-
-    /*public Set<ExchangePostDTO> getPostList() {
-        List<ExchangePost[]> postList = postRepository.findPosts(); // entity
-        // entity -> dto
-        Set<ExchangePostDTO> exchangePostDTOList = postList.stream()
-                .map(post -> modelMapper.map(post, ExchangePostDTO.class))
-                .collect(Collectors.toSet());
-
-        System.out.println("exchangePostDTOList = " + exchangePostDTOList);
-        return exchangePostDTOList;
-    }*/
-
-    public List<Post> getExchangePostList() {
-        return postRepository.findAll();
-    }
 }

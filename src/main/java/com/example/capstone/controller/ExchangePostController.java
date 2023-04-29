@@ -3,7 +3,6 @@ package com.example.capstone.controller;
 import com.example.capstone.data.LoginResponse;
 import com.example.capstone.dto.ExchangePostDTO;
 import com.example.capstone.entity.ExchangePost;
-import com.example.capstone.entity.Post;
 import com.example.capstone.entity.PostType;
 import com.example.capstone.entity.UserEntity;
 import com.example.capstone.jwt.TokenProvider;
@@ -32,10 +31,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @Api(tags = {"재능교환 게시물 관련 API"})
 @RestController
@@ -277,7 +274,7 @@ public class ExchangePostController {
             } else {
                 // exchangePost 타입만 가져오기
                 List<ExchangePost> exchangePostList = (List<ExchangePost>) postRepository.findByPostType(PostType.T);
-                List<ExchangePostDTO> exchangePostDTOList = ExchangePostDTO.toExchangePostDTO(exchangePostList);
+                List<ExchangePostDTO> exchangePostDTOList = ExchangePostDTO.toExchangePostDTOList(exchangePostList);
 
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode exchangePosts = objectMapper.convertValue(exchangePostDTOList, JsonNode.class);
@@ -288,6 +285,54 @@ public class ExchangePostController {
                 return ResponseEntity.status(HttpStatus.OK)
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(responseJson);
+            }
+
+        } catch (Exception e) {
+            responseJson = JsonNodeFactory.instance.objectNode();
+            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(responseJson);
+        }
+    }
+
+    @Transactional
+    @GetMapping("/detail/{postId}")
+    public ResponseEntity<?> getPostDetail(@PathVariable Long postId, HttpServletRequest request) {
+        try {
+            // 토큰 값 추출
+            String token = request.getHeader("Authorization");
+            token = token.replaceAll("Bearer ", "");
+
+            // 토큰 검증
+            if (!tokenProvider.validateToken(token)) {
+                responseJson = JsonNodeFactory.instance.objectNode();
+                responseJson.put("message", "유효하지 않은 토큰입니다.");
+
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(responseJson);
+            } else {
+                ExchangePost exchangePost = (ExchangePost) postRepository.findByPid(postId);
+
+                if (exchangePost == null) {
+                    responseJson = JsonNodeFactory.instance.objectNode();
+                    responseJson.put("message", "없거나 삭제된 게시글입니다.");
+
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                } else {
+                    ExchangePostDTO exchangePostDTO = ExchangePostDTO.toExchangePostDTO(exchangePost);
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    JsonNode exchangePostDetail = objectMapper.convertValue(exchangePostDTO, JsonNode.class);
+                    System.out.println("exchangePostDetail = " + exchangePostDetail);
+
+                    return ResponseEntity.status(HttpStatus.OK)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(exchangePostDetail);
+                }
             }
 
         } catch (Exception e) {
