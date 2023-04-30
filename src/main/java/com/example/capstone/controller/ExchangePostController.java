@@ -72,6 +72,7 @@ public class ExchangePostController {
             String token = request.getHeader("Authorization");
             System.out.println("Authorization = " + token);
             token = token.replaceAll("Bearer ", "");
+            System.out.println("token 값 = " + token);
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
