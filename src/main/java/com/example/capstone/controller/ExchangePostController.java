@@ -71,6 +71,7 @@ public class ExchangePostController {
             // 토큰 값 추출
             String token = request.getHeader("Authorization");
             System.out.println("Authorization = " + token);
+            token = token.replaceAll("Bearer ", "");
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
@@ -135,7 +136,7 @@ public class ExchangePostController {
             // 토큰 값 추출
             String token = request.getHeader("Authorization");
             token = token.replaceAll("Bearer ", "");
-            System.out.println("token = " + token);
+//            System.out.println("token = " + token);
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
