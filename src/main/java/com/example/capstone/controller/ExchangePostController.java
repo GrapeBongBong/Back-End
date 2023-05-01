@@ -76,12 +76,11 @@ public class ExchangePostController {
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
-//                responseJson.put("message", "유효하지 않은 토큰입니다.");
+                responseJson.put("message", "유효하지 않은 토큰입니다.");
 
-                BasicResponse basicResponse = BasicResponse.builder()
-                        .message("유효하지 않은 토큰입니다.")
-                        .build();
-                return new ResponseEntity<>(basicResponse, HttpStatus.NOT_FOUND);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(responseJson);
             }
 
             // 헤더에 첨부되어 있는 token 에서 로그인 된 사용자 정보 받아옴
