@@ -301,12 +301,12 @@ public class ExchangePostController {
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode exchangePosts = objectMapper.convertValue(exchangePostDTOList, JsonNode.class);
 
-                responseJson = JsonNodeFactory.instance.objectNode();
-                responseJson.set("posts", exchangePosts);
+//                responseJson = JsonNodeFactory.instance.objectNode();
+//                responseJson.set("posts", exchangePosts);
 
                 return ResponseEntity.status(HttpStatus.OK)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                        .body(exchangePosts);
             }
 
         } catch (Exception e) {

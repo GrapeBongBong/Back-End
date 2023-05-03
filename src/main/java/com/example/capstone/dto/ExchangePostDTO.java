@@ -48,10 +48,14 @@ public class ExchangePostDTO extends PostDTO{
 
     public static ExchangePostDTO toExchangePostDTO(ExchangePost exchangePost) {
         ExchangePostDTO exchangePostDTO = new ExchangePostDTO();
-        exchangePostDTO.setWriterNick(exchangePost.getUser().getNickName()); // 작성자 닉네임
-        exchangePostDTO.setWriterId(exchangePost.getUser().getId()); // 작성자 아이디
+        exchangePostDTO.setPid(exchangePost.getPid()); // 게시글 아이디
         exchangePostDTO.setTitle(exchangePost.getTitle());
         exchangePostDTO.setContent(exchangePost.getContent());
+        exchangePostDTO.setDate(exchangePost.getDate());
+        exchangePostDTO.setWriterNick(exchangePost.getUser().getNickName()); // 작성자 닉네임
+        exchangePostDTO.setWriterId(exchangePost.getUser().getId()); // 작성자 아이디
+        exchangePostDTO.setUid(exchangePost.getUser().getUid()); // 작성자 uid
+
         exchangePostDTO.setGiveCate(exchangePost.getGiveCate());
         exchangePostDTO.setGiveTalent(exchangePost.getGiveTalent());
         exchangePostDTO.setTakeCate(exchangePost.getTakeCate());
