@@ -2,10 +2,9 @@ package com.example.capstone.dto;
 
 import com.example.capstone.data.AvailableTime;
 import com.example.capstone.entity.ExchangePost;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.example.capstone.entity.PostType;
+import lombok.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -16,6 +15,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 public class ExchangePostDTO extends PostDTO{
 
     @NotBlank
@@ -32,6 +32,8 @@ public class ExchangePostDTO extends PostDTO{
 
     private AvailableTime availableTime; // 가능한 시간대
 
+    private final PostType postType = PostType.T; // 포스트 타입
+
     // 이미지 필드 추가
 
     public static List<ExchangePostDTO> toExchangePostDTOList(List<ExchangePost> exchangePostList) {
@@ -46,21 +48,22 @@ public class ExchangePostDTO extends PostDTO{
 
     public static ExchangePostDTO toExchangePostDTO(ExchangePost exchangePost) {
         ExchangePostDTO exchangePostDTO = new ExchangePostDTO();
-        exchangePostDTO.setPid(exchangePost.getPid());
         exchangePostDTO.setWriterNick(exchangePost.getUser().getNickName()); // 작성자 닉네임
         exchangePostDTO.setWriterId(exchangePost.getUser().getId()); // 작성자 아이디
-        exchangePostDTO.setDate(exchangePost.getDate());
         exchangePostDTO.setTitle(exchangePost.getTitle());
         exchangePostDTO.setContent(exchangePost.getContent());
         exchangePostDTO.setGiveCate(exchangePost.getGiveCate());
         exchangePostDTO.setGiveTalent(exchangePost.getGiveTalent());
         exchangePostDTO.setTakeCate(exchangePost.getTakeCate());
         exchangePostDTO.setTakeTalent(exchangePost.getTakeTalent());
+        exchangePostDTO.setPostType(PostType.T);
 
         AvailableTime availableTimeDTO = new AvailableTime();
         availableTimeDTO.setDays(exchangePost.getDays());
         availableTimeDTO.setTimezone(exchangePost.getTimezone());
         exchangePostDTO.setAvailableTime(availableTimeDTO);
+
+        // 이미지 관련 로직 추가
 
         return exchangePostDTO;
     }

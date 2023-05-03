@@ -9,9 +9,6 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.List;
 
 @Entity
 @Getter
@@ -57,21 +54,16 @@ public class ExchangePost extends Post {
         exchangePost.setGiveTalent(exchangePostDTO.getGiveTalent());
         exchangePost.setTakeCate(exchangePostDTO.getTakeCate());
         exchangePost.setTakeTalent(exchangePostDTO.getTakeTalent());
-        // 이미지 세팅 추가하기
         exchangePost.setStatus(true); // 재능거래 중
-        exchangePost.setPostType(PostType.T);
+        exchangePost.setPostType(exchangePostDTO.getPostType());
 
         // 시간대 정보 저장
         AvailableTime availableTime = exchangePostDTO.getAvailableTime();
         exchangePost.setDays(availableTime.getDays());
         exchangePost.setTimezone(availableTime.getTimezone());
 
-        return exchangePost;
-    }
+        // 이미지 세팅 추가하기
 
-    public static String formatDate(LocalDateTime localDateTime) {
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        String formattedTime = localDateTime.format(dateTimeFormatter);
-        return formattedTime;
+        return exchangePost;
     }
 }

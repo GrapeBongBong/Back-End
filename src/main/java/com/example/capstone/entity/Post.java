@@ -1,10 +1,14 @@
 package com.example.capstone.entity;
 
+import com.example.capstone.dto.PostDTO;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import javax.persistence.*;
 import javax.validation.constraints.Size;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,6 +17,7 @@ import java.util.List;
 @Setter
 @Table(name = "post")
 @Inheritance(strategy = InheritanceType.JOINED)
+@ToString
 public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -61,5 +66,11 @@ public class Post {
     public void deleteComment(Comment comment) {
         comments.remove(comment);
         comment.setPost(null);
+    }
+
+    public static String formatDate(LocalDateTime localDateTime) {
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String formattedTime = localDateTime.format(dateTimeFormatter);
+        return formattedTime;
     }
 }
