@@ -278,7 +278,7 @@ public class AnonymousPostController {
                         .body(responseJson);
             } else {
                 // Anonymous 타입만 가져오기
-                List<AnonymousPost> anonymousPostList = (List<AnonymousPost>) postRepository.findByPostType(PostType.T);
+                List<AnonymousPost> anonymousPostList = (List<AnonymousPost>) postRepository.findByPostType(PostType.A);
                 List<AnonymousPostDTO> anonymousPostDTOList = AnonymousPostDTO.toAnonymousPostDTOList(anonymousPostList);
 
                 ObjectMapper objectMapper = new ObjectMapper();
