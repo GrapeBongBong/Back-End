@@ -29,7 +29,7 @@ public class CommentService {
     }
 
     public CommentDTO createComment(CommentRequestDTO requestDTO, Long postId, Long userId) {
-        // 댓글을 등록할 게시물과 사용자 정보를 조회합니다.
+        // 댓글을 등록할 게시물과 사용자 정보를 조회
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid post id: " + postId));
         UserEntity user = userRepository.findById(userId)
@@ -45,40 +45,29 @@ public class CommentService {
         return CommentDTO.tocommentDTO(savedComment);
     }
 
-/*
-    public Comment addComment(Long postId, CommentDTO commentDTO) {
-        Post post = postRepository.findByPid(postId);
-        UserEntity userEntity = userRepository.findById(commen);
-        Comment comment = Comment.toEntity(commentDTO);
-
-        comment.setPost(post);
-        comment.setUser(user);
-        comment.setContent(commentDTO.getContent());
-        comment.setDate(LocalDateTime.now());
-
-        return commentRepository.save(comment);
-
-
-    }
-*/
-
     //댓글 수정
-    public CommentDTO updateComment(Long commentId, String content) {
-        Comment comment = commentRepository.findById(commentId).orElse(null);
-        if (comment == null) {
-            System.out.println("존재하지 않는 댓글: " + commentId);
-        }
-        comment.setContent(content);
-        commentRepository.save(comment);
-        return CommentDTO.tocommentDTO(comment);
+    public CommentDTO updateComment(Long commentId, CommentRequestDTO requestDTO) {
+        // 댓글 정보를 조회
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글 ID: " + commentId));
+
+        // 댓글 내용을 업데이트
+        comment.updateComment(requestDTO.getContent());
+
+        // 업데이트된 댓글 정보를 저장
+        Comment updateComment = commentRepository.save(comment);
+
+        // 저장된 댓글 정보를 CommentDTO로 변환하여 반환
+        return CommentDTO.tocommentDTO(updateComment);
     }
 
     //댓글 삭제
     public void deleteComment(Long commentId) {
-        Comment comment = commentRepository.findById(commentId).orElse(null);
-        if (comment == null) {
-            System.out.println("존재하지 않는 댓글: " + commentId);
-        }
+        // 댓글 정보를 조회
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글 ID: " + commentId));
+
+        // 댓글을 삭제
         commentRepository.delete(comment);
     }
 
@@ -92,6 +81,7 @@ public class CommentService {
         return commentDTOs;
     }
 
+    /*
     // 게시물 존재 여부
     public boolean isPostExists(Long postId) {
         return postRepository.existsById(postId);
@@ -106,6 +96,6 @@ public class CommentService {
         }
         return false;
     }
-
+    */
 }
 
