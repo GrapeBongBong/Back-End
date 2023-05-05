@@ -20,6 +20,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
@@ -38,8 +39,8 @@ public class AnonymousPostController {
     private ObjectNode responseJson;
 
     // 게시물 등록 API
-    @PostMapping("/post")
-    public ResponseEntity<?> createPost(@Valid @RequestBody AnonymousPostDTO anonymousPostDTO, BindingResult bindingResult, HttpServletRequest request) {
+    @PostMapping(value = "/post", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
+    public ResponseEntity<?> createPost(@Valid @RequestBody AnonymousPostDTO anonymousPostDTO, @RequestPart("images") List<MultipartFile> imageFiles, BindingResult bindingResult, HttpServletRequest request) {
         responseJson = JsonNodeFactory.instance.objectNode();
 
         // 필수정보 체크
@@ -83,7 +84,7 @@ public class AnonymousPostController {
                 System.out.println("uid = " + uid);
 
                 // 가져온 Uid 를 해당 포스트 컬럼에 추가
-                postService.save(anonymousPostDTO, userEntity);
+                postService.save(anonymousPostDTO, imageFiles, userEntity);
 
                 responseJson.put("message", "익명커뮤니티에 게시물이 성공적으로 등록되었습니다.");
 

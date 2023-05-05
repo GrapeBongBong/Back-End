@@ -1,6 +1,7 @@
 package com.example.capstone.entity;
 
 import com.example.capstone.dto.PostDTO;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -37,6 +38,7 @@ public class Post {
 
     // 게시물에 첨부한 이미지
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL) // 게시물, 게시물 사진 간 일대다 매핑
+    @JsonManagedReference // 해당 객체를 직렬화할 때 postImages를 다룸 (무한루프 방지)
     @Column(name = "post_images")
     @Size(max = 3)
     private List<PostImage> postImages = new ArrayList<>();

@@ -5,6 +5,7 @@ import com.example.capstone.entity.ExchangePost;
 import com.example.capstone.entity.PostType;
 import lombok.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -34,8 +35,6 @@ public class ExchangePostDTO extends PostDTO{
 
     private final PostType postType = PostType.T; // 포스트 타입
 
-    // 이미지 필드 추가
-
     public static List<ExchangePostDTO> toExchangePostDTOList(List<ExchangePost> exchangePostList) {
         List<ExchangePostDTO> exchangePostDTOList = new ArrayList<>();
 
@@ -46,7 +45,7 @@ public class ExchangePostDTO extends PostDTO{
         return exchangePostDTOList;
     }
 
-    public static ExchangePostDTO toExchangePostDTO(ExchangePost exchangePost) {
+    public static ExchangePostDTO toExchangePostDTO(ExchangePost exchangePost) { // entity -> dto
         ExchangePostDTO exchangePostDTO = new ExchangePostDTO();
         exchangePostDTO.setPid(exchangePost.getPid()); // 게시글 아이디
         exchangePostDTO.setTitle(exchangePost.getTitle());
@@ -68,6 +67,7 @@ public class ExchangePostDTO extends PostDTO{
         exchangePostDTO.setAvailableTime(availableTimeDTO);
 
         // 이미지 관련 로직 추가
+        exchangePostDTO.setImages(exchangePost.getPostImages());
 
         return exchangePostDTO;
     }

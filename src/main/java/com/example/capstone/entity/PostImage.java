@@ -1,5 +1,6 @@
 package com.example.capstone.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,5 +18,9 @@ public class PostImage {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Pid")
+    @JsonBackReference // 해당 객체를 직렬화할 때 post 는 무시 (무한루프 방지)
     private Post post;
+
+    @Lob
+    private byte[] image;
 }
