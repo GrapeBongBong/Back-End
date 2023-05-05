@@ -1,6 +1,7 @@
 package com.example.capstone.controller;
 
 import com.example.capstone.dto.CommentDTO;
+import com.example.capstone.dto.CommentRequestDTO;
 import com.example.capstone.entity.Comment;
 import com.example.capstone.entity.Post;
 import com.example.capstone.entity.UserEntity;
@@ -8,6 +9,7 @@ import com.example.capstone.jwt.TokenProvider;
 import com.example.capstone.repository.PostRepository;
 import com.example.capstone.repository.UserRepository;
 import com.example.capstone.service.CommentService;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.swagger.annotations.Api;
@@ -32,15 +34,12 @@ public class CommentController {
     private final CommentService commentService;
     private final TokenProvider tokenProvider;
     private final UserRepository userRepository;
-    private final PostRepository postRepository;
 
     @PostMapping("/save")
-    public ResponseEntity<?> createComment(@PathVariable Long postId, @Valid @RequestBody CommentDTO commentDTO, BindingResult bindingResult, HttpServletRequest request) {
+    public ResponseEntity<?> createComment(@PathVariable Long postId, @Valid @RequestBody CommentRequestDTO commentRequestDTO, BindingResult bindingResult, HttpServletRequest request) {
         JsonNodeFactory jsonFactory = JsonNodeFactory.instance;
         ObjectNode responseJson = jsonFactory.objectNode();
 
-        System.out.println("실행1");
-        System.out.println(postId);
         // 필수정보 체크
         if (bindingResult.hasErrors()) {
             responseJson.put("message", "필수 정보가 없습니다.");
@@ -67,21 +66,22 @@ public class CommentController {
 
             // UserEntity를 사용자 아이디를 기반으로 조회
             Optional<UserEntity> loggedInUserEntity = userRepository.findById(id); // 사용자 아이디를 기반으로 사용자 조회
+            UserEntity userEntity = null;
 
             if (loggedInUserEntity.isPresent()) {
-                System.out.println("실행3");
-                // 해당 포스트가 존재하는지 체크
-                Optional<Post> postEntity = postRepository.findById(postId);
-                if (postEntity.isPresent()) {
-                    Comment comment = new Comment();
-                    comment.setContent(commentDTO.getContent());
-                    System.out.println("실행4");
-                    commentService.addComment(postId, CommentDTO.from(comment));
+                userEntity = loggedInUserEntity.get();
+                Long uid = userEntity.getUid(); // 가져온 UserEntity 객체에서 Uid를 가져옴
+                System.out.println("User = " + userEntity);
+                System.out.println("uid = " + uid);
 
-                    responseJson.put("message", "댓글이 성공적으로 등록되었습니다.");
-                    return ResponseEntity.status(HttpStatus.CREATED)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(responseJson);
+                CommentDTO createdComment = commentService.createComment(commentRequestDTO, postId, uid);
+                responseJson.put("message", "댓글이 성공적으로 등록되었습니다.");
+                //responseJson.put("createdComment", String.valueOf(createdComment));
+                System.out.println(createdComment);
+
+                return ResponseEntity.status(HttpStatus.CREATED)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(responseJson);
 
                 } else {
                     responseJson.put("message", "해당 포스트가 존재하지 않습니다.");
@@ -89,13 +89,6 @@ public class CommentController {
                             .contentType(MediaType.APPLICATION_JSON)
                             .body(responseJson);
                 }
-
-            } else {
-                responseJson.put("message", "회원이 아닙니다.");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
-            }
         } catch (Exception e) {
             responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

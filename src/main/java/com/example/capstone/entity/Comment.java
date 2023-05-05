@@ -1,16 +1,20 @@
 package com.example.capstone.entity;
 
+import com.example.capstone.dto.CommentRequestDTO;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import com.example.capstone.dto.CommentDTO;
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Entity
 @Getter
 @Setter
 @Table(name = "comment")
+@ToString
 public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,22 +36,11 @@ public class Comment {
     @JoinColumn(name = "Uid")
     private UserEntity user;
 
-    // Post와 양방향 연관관계 설정
-    public void setPost(Post post) {
-        this.post = post;
-        post.getComments().add(this);
-    }
-
-    // UserEntity와 양방향 연관관계 설정
-    public void setUser(UserEntity user) {
-        this.user = user;
-        user.getComments().add(this);
-    }
-
-    // CommentDTO를 Comment 엔티티로 매핑
-    public static Comment toEntity(CommentDTO commentDTO) {
+    public static Comment from(CommentRequestDTO requestDTO, Post post, UserEntity user) {
         Comment comment = new Comment();
-        comment.setContent(commentDTO.getContent());
+        comment.setContent(requestDTO.getContent());
+        comment.setPost(post);
+        comment.setUser(user);
         return comment;
     }
 

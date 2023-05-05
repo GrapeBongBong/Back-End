@@ -1,6 +1,7 @@
 package com.example.capstone.service;
 
 import com.example.capstone.dto.CommentDTO;
+import com.example.capstone.dto.CommentRequestDTO;
 import com.example.capstone.entity.Comment;
 import com.example.capstone.entity.Post;
 import com.example.capstone.entity.UserEntity;
@@ -9,6 +10,7 @@ import com.example.capstone.repository.PostRepository;
 import com.example.capstone.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -26,43 +28,39 @@ public class CommentService {
         this.userRepository = userRepository;
     }
 
+    public CommentDTO createComment(CommentRequestDTO requestDTO, Long postId, Long userId) {
+        // 댓글을 등록할 게시물과 사용자 정보를 조회합니다.
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid post id: " + postId));
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid user id: " + userId));
 
-    public void addComment(Long postId, CommentDTO commentDTO) {
-        /*Optional<Post> post = postRepository.findById(postId);
-        Optional<UserEntity> user = userRepository.findById(commentDTO.getUserId());
+        // CommentRequestDTO를 Comment 엔티티로 변환
+        Comment comment = Comment.from(requestDTO, post, user);
 
-        if (post.isPresent() && user.isPresent()) {
-            Comment comment = Comment.toEntity(commentDTO);
-            System.out.println("COMMENT:" + comment);
-            comment.setContent(commentDTO.getContent());
-            comment.setUser(user.get());
-            comment.setPost(post.get());
-            comment.setDate(LocalDateTime.now());
-            commentRepository.save(comment);
-        } else {
-            throw new IllegalArgumentException("Invalid post or user id");
-        }*/
+        // 변환된 Comment 엔티티를 저장
+        Comment savedComment = commentRepository.save(comment);
 
+        // 저장된 Comment 엔티티를 CommentDTO로 변환하여 반환
+        return CommentDTO.tocommentDTO(savedComment);
+    }
+
+/*
+    public Comment addComment(Long postId, CommentDTO commentDTO) {
+        Post post = postRepository.findByPid(postId);
+        UserEntity userEntity = userRepository.findById(commen);
         Comment comment = Comment.toEntity(commentDTO);
-        Optional<Post> optionalPost = postRepository.findById(postId);
-        if (optionalPost.isEmpty()) {
-            throw new IllegalArgumentException("해당 포스트가 존재하지 않습니다.");
-        }
-        Post post = optionalPost.get();
+
         comment.setPost(post);
+        comment.setUser(user);
+        comment.setContent(commentDTO.getContent());
+        comment.setDate(LocalDateTime.now());
 
-        String writerId = String.valueOf(commentDTO.getUserId());
-        Optional<UserEntity> optionalUserEntity = userRepository.findById(writerId);
-        if (optionalUserEntity.isEmpty()) {
-            throw new IllegalArgumentException("해당 작성자가 존재하지 않습니다.");
-        }
-        UserEntity writer = optionalUserEntity.get();
-        comment.setUser(writer);
-
-        commentRepository.save(comment);
+        return commentRepository.save(comment);
 
 
     }
+*/
 
     //댓글 수정
     public CommentDTO updateComment(Long commentId, String content) {
@@ -72,7 +70,7 @@ public class CommentService {
         }
         comment.setContent(content);
         commentRepository.save(comment);
-        return CommentDTO.from(comment);
+        return CommentDTO.tocommentDTO(comment);
     }
 
     //댓글 삭제
@@ -89,7 +87,7 @@ public class CommentService {
         List<Comment> comments = commentRepository.findByPostPid(postId);
         List<CommentDTO> commentDTOs = new ArrayList<>();
         for (Comment comment : comments) {
-            commentDTOs.add(CommentDTO.from(comment));
+            commentDTOs.add(CommentDTO.tocommentDTO(comment));
         }
         return commentDTOs;
     }
