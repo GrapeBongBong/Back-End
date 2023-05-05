@@ -29,6 +29,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
@@ -54,8 +55,8 @@ public class ExchangePostController {
             @ApiResponse(responseCode = "400", description = "재능거래 게시물 등록에 실패했습니다.", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ExchangePost.class))})
     })
 
-    @PostMapping("/post")
-    public ResponseEntity<?> createPost(@Valid @RequestBody ExchangePostDTO exchangePostDTO, BindingResult bindingResult, HttpServletRequest request) {
+    @PostMapping(value = "/post", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
+    public ResponseEntity<?> createPost(@Valid @RequestPart ExchangePostDTO exchangePostDTO, @RequestPart(value = "images", required = false) List<MultipartFile> imageFiles, BindingResult bindingResult, HttpServletRequest request) {
 
         responseJson = JsonNodeFactory.instance.objectNode();
 
@@ -71,7 +72,6 @@ public class ExchangePostController {
         try {
             // 토큰 값 추출
             String token = request.getHeader("Authorization");
-            System.out.println("Authorization = " + token);
             token = token.replaceAll("Bearer ", "");
 
             // 토큰 검증
@@ -90,7 +90,7 @@ public class ExchangePostController {
             String id = userDetails.getUsername(); // UserDetails 객체에서 사용자 아이디를 가져옴
 
             // UserEntity를 사용자 아이디를 기반으로 조회
-            Optional<UserEntity> loggedInUserEntity = userRepository.findById(id); // 사용자 아이디를 기반으로 사용자 조회
+            Optional<UserEntity> loggedInUserEntity = userRepository.findById(id);
             UserEntity userEntity = null;
 
             if (loggedInUserEntity.isPresent()) {
@@ -100,7 +100,7 @@ public class ExchangePostController {
                 System.out.println("uid = " + uid);
 
                 // 가져온 Uid 를 해당 포스트 컬럼에 추가
-                postService.save(exchangePostDTO, userEntity);
+                postService.save(exchangePostDTO, imageFiles, userEntity);
 
                 responseJson.put("message", "재능거래 게시물이 성공적으로 등록되었습니다.");
 
@@ -300,9 +300,6 @@ public class ExchangePostController {
 
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode exchangePosts = objectMapper.convertValue(exchangePostDTOList, JsonNode.class);
-
-//                responseJson = JsonNodeFactory.instance.objectNode();
-//                responseJson.set("posts", exchangePosts);
 
                 return ResponseEntity.status(HttpStatus.OK)
                         .contentType(MediaType.APPLICATION_JSON)
