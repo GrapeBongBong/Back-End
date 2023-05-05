@@ -3,7 +3,7 @@ package com.example.capstone.entity;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
-
+import com.example.capstone.dto.CommentDTO;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
@@ -31,4 +31,25 @@ public class Comment {
     @ManyToOne
     @JoinColumn(name = "Uid")
     private UserEntity user;
+
+    // Post와 양방향 연관관계 설정
+    public void setPost(Post post) {
+        this.post = post;
+        post.getComments().add(this);
+    }
+
+    // UserEntity와 양방향 연관관계 설정
+    public void setUser(UserEntity user) {
+        this.user = user;
+        user.getComments().add(this);
+    }
+
+    // CommentDTO를 Comment 엔티티로 매핑
+    public static Comment toEntity(CommentDTO commentDTO) {
+        Comment comment = new Comment();
+        comment.setContent(commentDTO.getContent());
+        return comment;
+    }
+
+
 }

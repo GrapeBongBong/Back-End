@@ -7,7 +7,9 @@ import org.springframework.lang.NonNull;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -80,6 +82,27 @@ public class UserEntity {
             inverseJoinColumns = {@JoinColumn(name = "role_name", referencedColumnName = "role_name")})
     private Set<RoleEntity> roles;
 
+    //댓글
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
+    @Column(name = "comments")
+    private List<Comment> comments = new ArrayList<>();
+
+    // 댓글 목록 조회
+    public List<Comment> getComments() {
+        return Collections.unmodifiableList(comments);
+    }
+
+    // 댓글 추가
+    public void addComment(Comment comment) {
+        comments.add(comment);
+        comment.setUser(this);
+    }
+
+    // 댓글 삭제
+    public void deleteComment(Comment comment) {
+        comments.remove(comment);
+        comment.setUser(null);
+    }
 
     // 비밀번호 암호화
     public UserEntity hashPassword(PasswordEncoder passwordEncoder) {
