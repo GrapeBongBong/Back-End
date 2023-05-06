@@ -30,7 +30,7 @@ import java.util.Optional;
 @Api(tags = {"댓글 API"})
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/{postId}/comment")
+@RequestMapping("/{postId}/comments")
 public class CommentController {
     private final CommentService commentService;
     private final TokenProvider tokenProvider;
@@ -38,7 +38,7 @@ public class CommentController {
     private final CommentRepository commentRepository;
 
     //댓글 등록 API
-    @PostMapping("/save")
+    @PostMapping
     public ResponseEntity<?> createComment(@PathVariable Long postId, @Valid @RequestBody CommentRequestDTO commentRequestDTO, BindingResult bindingResult, HttpServletRequest request) {
         JsonNodeFactory jsonFactory = JsonNodeFactory.instance;
         ObjectNode responseJson = jsonFactory.objectNode();
@@ -101,7 +101,7 @@ public class CommentController {
     }
 
     //댓글 수정
-    @PutMapping("/update/{commentId}")
+    @PutMapping("/{commentId}")
     public ResponseEntity<?> updateComment(@PathVariable Long postId, @PathVariable Long commentId, @Valid @RequestBody CommentRequestDTO commentRequestDTO, BindingResult bindingResult, HttpServletRequest request) {
         JsonNodeFactory jsonFactory = JsonNodeFactory.instance;
         ObjectNode responseJson = jsonFactory.objectNode();
