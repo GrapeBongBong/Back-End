@@ -2,6 +2,7 @@ package com.example.capstone.controller;
 
 import com.example.capstone.data.LoginResponse;
 import com.example.capstone.dto.ExchangePostDTO;
+import com.example.capstone.dto.PageResponse;
 import com.example.capstone.entity.ExchangePost;
 import com.example.capstone.entity.Post;
 import com.example.capstone.entity.PostType;
@@ -21,6 +22,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -316,6 +319,43 @@ public class ExchangePostController {
         }
     }
 
+    //재능 교환 게시물 페이징 처리
+    @Transactional
+    @GetMapping("/exchange-posts")
+    public ResponseEntity<?> getPostList(Pageable pageable, HttpServletRequest request) {
+        try {
+            // 토큰 값 추출
+            String token = request.getHeader("Authorization");
+            token = token.replaceAll("Bearer ", "");
+
+            // 토큰 검증
+            if (!tokenProvider.validateToken(token)) {
+                responseJson.put("message", "유효하지 않은 토큰입니다.");
+
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(responseJson);
+            } else {
+                // 페이지 정보를 이용하여 ExchangePost를 조회하고, ExchangePostDTO로 변환
+                Page<ExchangePost> exchangePostPage = postRepository.findByPostType(PostType.T, pageable);
+                // 변환된 ExchangePostDTO 리스트와 페이지 정보를 담은 객체 생성
+                PageResponse<ExchangePostDTO> pageResponse = PageResponse.from(exchangePostPage.map(ExchangePostDTO::toExchangePostDTO));
+
+
+                return ResponseEntity.status(HttpStatus.OK)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(pageResponse);
+            }
+
+        } catch (Exception e) {
+            responseJson = JsonNodeFactory.instance.objectNode();
+            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(responseJson);
+        }
+    }
     // 게시글 상세 조회 API
     /*@Transactional
     @GetMapping("/detail/{postId}")

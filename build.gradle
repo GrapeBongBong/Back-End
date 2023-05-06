@@ -64,6 +64,10 @@ dependencies {
 
 	// webSocket
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+	//Hibernate5Module
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate5:2.13.0'
+
 }
 
 dependencyManagement {

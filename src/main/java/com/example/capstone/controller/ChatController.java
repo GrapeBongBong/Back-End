@@ -70,7 +70,7 @@ public class ChatController {
             if (user.isPresent()) {
                 ChatRoom chatRoom = chatService.createRoom(exchangePost.getUser(), user.get(), exchangePost);
                 WebSocketSessionManager sessionManager = WebSocketSessionManager.getInstance();
-                sessionManager.addSession(chatRoom.getRoomId(), session);
+                //sessionManager.addSession(chatRoom.getRoomId(), session);
 
 //                responseJson.put("roomId", roomId);
 
@@ -94,6 +94,7 @@ public class ChatController {
 //                    .body(responseJson);
             return null;
         }
+        return null; //임시
     }
 
     // 채팅방 목록 조회 API

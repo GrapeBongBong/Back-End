@@ -7,12 +7,16 @@ import com.example.capstone.dto.PostDTO;
 import com.example.capstone.entity.*;
 import com.example.capstone.repository.PostRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import com.example.capstone.dto.PostDTO;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.example.capstone.entity.ExchangePost.formatDate;
@@ -90,4 +94,23 @@ public class PostService {
             anonymousPost.setContent(anonymousPostDTO.getContent());
         }
     }
+
+/*    public Page<Post> getAllPosts(Pageable pageable) {
+        List<Post> posts = postRepository.findAll(); // DB에서 데이터를 가져오는 코드
+
+        int total = posts.size();
+        int start = pageable.getPageNumber() * pageable.getPageSize();
+        int end = Math.min(start + pageable.getPageSize(), total);
+
+        if (start > end) {
+            return new PageImpl<>(Collections.emptyList(), pageable, total);
+        } else {
+            return new PageImpl<>(posts.subList(start, end), pageable, total);
+        }
+    }
+
+    public long getPostCount() {
+        return postRepository.count();
+    }*/
+
 }
