@@ -2,11 +2,9 @@ package com.example.capstone.controller;
 
 import com.example.capstone.dto.ChatDTO;
 import com.example.capstone.dto.ChatRoomDTO;
-import com.example.capstone.entity.ChatMessage;
 import com.example.capstone.entity.ChatRoom;
 import com.example.capstone.entity.ExchangePost;
 import com.example.capstone.entity.UserEntity;
-import com.example.capstone.handler.WebSocketSessionManager;
 import com.example.capstone.jwt.TokenProvider;
 import com.example.capstone.repository.ChatRoomRepository;
 import com.example.capstone.repository.PostRepository;
@@ -18,14 +16,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -68,8 +62,7 @@ public class ChatController {
             ExchangePost exchangePost = (ExchangePost) postRepository.findByPid(pid); // 해당 재능교환 게시글
 
             if (user.isPresent()) {
-                ChatRoom chatRoom = chatService.createRoom(exchangePost.getUser(), user.get(), exchangePost);
-                WebSocketSessionManager sessionManager = WebSocketSessionManager.getInstance();
+//                ChatRoom chatRoom = chatService.createRoom(exchangePost.getUser(), user.get(), exchangePost);
                 //sessionManager.addSession(chatRoom.getRoomId(), session);
 
 //                responseJson.put("roomId", roomId);
@@ -77,7 +70,7 @@ public class ChatController {
                 /*return ResponseEntity.status(HttpStatus.OK)
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(responseJson);*/
-//                return chatService.createRoom(exchangePost.getUser(), user.get(), exchangePost);
+                return chatService.createRoom(exchangePost.getUser(), user.get(), exchangePost);
             } else {
                 /*responseJson.put("message", "가입된 사용자가 아닙니다.");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -94,7 +87,6 @@ public class ChatController {
 //                    .body(responseJson);
             return null;
         }
-        return null; //임시
     }
 
     // 채팅방 목록 조회 API
