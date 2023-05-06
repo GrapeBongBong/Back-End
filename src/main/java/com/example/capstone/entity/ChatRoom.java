@@ -50,18 +50,4 @@ public class ChatRoom {
     @Column(name = "date", nullable = false)
     private LocalDateTime date;
 
-    // 세션
-    @ElementCollection
-    private Set<String> sessions = new HashSet<>();
-
-    // 세션 추가
-    public void addSession(String sessionId) {
-        sessions.add(sessionId);
-    }
-
-    // 세션 제거
-    public void removeSession(String sessionId) {
-        sessions.remove(sessionId);
-    }
-
 }
