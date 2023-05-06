@@ -79,10 +79,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests()
                 .antMatchers("/auth/login", "/auth/join").permitAll() // 로그인, 회원가입 API 는 토큰이 없는 상태에서 요청이 들어오기 때문에 permitAll 설정
                 .antMatchers(HttpMethod.POST, "/exchange/**").permitAll()
+                .antMatchers("/ws/chat/**").permitAll()
                 // .requestMatchers(PathRequest.toH2Console()).permitAll()
                 .anyRequest().authenticated()
-
-
                 .and()
                 .apply(new JwtSecurityConfig(tokenProvider));
 
