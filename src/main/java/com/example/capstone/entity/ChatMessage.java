@@ -1,10 +1,13 @@
 package com.example.capstone.entity;
 
+import com.example.capstone.dto.ChatMessageDTO;
+import com.example.capstone.repository.UserRepository;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Entity
 @Getter
@@ -25,5 +28,6 @@ public class ChatMessage {
     @JoinColumn(name = "room")
     private ChatRoom chatRoom;
 
-    private LocalDateTime date;
+    private String date;
+
 }

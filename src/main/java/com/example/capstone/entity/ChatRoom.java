@@ -1,16 +1,12 @@
 package com.example.capstone.entity;
 
-import com.example.capstone.dto.ChatRoomDTO;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Entity
 @Getter
@@ -48,6 +44,6 @@ public class ChatRoom {
     private List<ChatMessage> messages = new ArrayList<>();
 
     @Column(name = "date", nullable = false)
-    private LocalDateTime date;
+    private String date;
 
 }
