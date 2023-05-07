@@ -62,8 +62,6 @@ public class ExchangePost extends Post {
         exchangePost.setDays(availableTime.getDays());
         exchangePost.setTimezone(availableTime.getTimezone());
 
-        // 이미지 세팅 추가하기
-
         return exchangePost;
     }
 }
