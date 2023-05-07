@@ -88,8 +88,21 @@ public class ChatController {
     // 채팅방 목록 조회 API
     @Transactional
     @GetMapping("/rooms")
-    public ResponseEntity<?> getAllRooms() { // HttpServletRequest request 나중에 추가할 것
+    public ResponseEntity<?> getAllRooms(HttpServletRequest request) { // HttpServletRequest request 나중에 추가할 것
         try {
+            // 토큰 값 추출
+            String token = request.getHeader("Authorization");
+            token = token.replaceAll("Bearer ", "");
+
+            // 토큰 검증
+            if (!tokenProvider.validateToken(token)) {
+                responseJson.put("message", "유효하지 않은 토큰입니다.");
+
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(responseJson);
+            }
+
             List<ChatRoom> chatRooms = chatService.getAllRooms();
             List<ChatRoomDTO> chatRoomDTOList = ChatRoomDTO.toChatRoomDTOList(chatRooms);
 

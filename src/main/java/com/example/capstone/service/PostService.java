@@ -33,7 +33,7 @@ public class PostService {
 
         System.out.println("PostDTO = " + postDTO.toString());
 
-        System.out.println("imageFiles = " + imageFiles);
+        System.out.println("imageFiles = " + imageFiles.get(0).getOriginalFilename());
 
         if (postDTO.getPostType() == PostType.T) { // 재능교환 게시물일 경우 ExchangePost 로 저장
             completedPost = ExchangePost.toExchangePost((ExchangePostDTO) postDTO);
