@@ -11,6 +11,8 @@ import com.example.capstone.repository.PostRepository;
 import com.example.capstone.repository.UserRepository;
 import com.example.capstone.service.CommentService;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.swagger.annotations.Api;
@@ -25,12 +27,13 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.util.List;
 import java.util.Optional;
 
 @Api(tags = {"댓글 API"})
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/{postId}/comments")
+@RequestMapping("/{postId}")
 public class CommentController {
     private final CommentService commentService;
     private final TokenProvider tokenProvider;
@@ -38,7 +41,7 @@ public class CommentController {
     private final CommentRepository commentRepository;
 
     //댓글 등록 API
-    @PostMapping
+    @PostMapping("/comment")
     public ResponseEntity<?> createComment(@PathVariable Long postId, @Valid @RequestBody CommentRequestDTO commentRequestDTO, BindingResult bindingResult, HttpServletRequest request) {
         JsonNodeFactory jsonFactory = JsonNodeFactory.instance;
         ObjectNode responseJson = jsonFactory.objectNode();
@@ -101,7 +104,7 @@ public class CommentController {
     }
 
     //댓글 수정
-    @PutMapping("/{commentId}")
+    @PutMapping("/comment/{commentId}")
     public ResponseEntity<?> updateComment(@PathVariable Long postId, @PathVariable Long commentId, @Valid @RequestBody CommentRequestDTO commentRequestDTO, BindingResult bindingResult, HttpServletRequest request) {
         JsonNodeFactory jsonFactory = JsonNodeFactory.instance;
         ObjectNode responseJson = jsonFactory.objectNode();
@@ -169,7 +172,7 @@ public class CommentController {
     }
 
     //댓글 삭제
-    @DeleteMapping("/delete/{commentId}")
+    @DeleteMapping("/comment/delete/{commentId}")
     public ResponseEntity<?> deleteComment(@PathVariable Long commentId, HttpServletRequest request) {
         JsonNodeFactory jsonFactory = JsonNodeFactory.instance;
         ObjectNode responseJson = jsonFactory.objectNode();
@@ -228,5 +231,44 @@ public class CommentController {
         }
     }
 
+    //댓글 조회
+    @GetMapping("/comments")
+    public ResponseEntity<?> getComments(@PathVariable Long postId, HttpServletRequest request) {
+        JsonNodeFactory jsonFactory = JsonNodeFactory.instance;
+        ObjectNode responseJson = jsonFactory.objectNode();
+
+        try {
+            // 토큰 값 추출
+            String token = request.getHeader("Authorization");
+            token = token.replaceAll("Bearer ", "");
+
+            // 토큰 검증
+            if (!tokenProvider.validateToken(token)) {
+                responseJson.put("message", "유효하지 않은 토큰입니다.");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).contentType(MediaType.APPLICATION_JSON).body(responseJson);
+            }
+
+
+            List<CommentDTO> commentDTOs = commentService.getCommentsByPostId(postId);
+
+            // ObjectMapper를 사용하여 pretty-printing된 JSON 문자열 생성
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.enable(SerializationFeature.INDENT_OUTPUT); // 들여쓰기 설정
+
+            responseJson.putPOJO("comments", commentDTOs);
+            //return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mapper.writeValueAsString(responseJson));
+
+            //responseJson.put("comments", commentDTOs);
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(responseJson);
+        } catch (Exception e) {
+            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(responseJson);
+        }
+    }
 }
 

@@ -71,8 +71,8 @@ public class CommentService {
         commentRepository.delete(comment);
     }
 
-    // 댓글 목록을 조회
-    public List<CommentDTO> getCommentsByPost(Long postId) {
+    // 게시물의 댓글 조회
+    public List<CommentDTO> getCommentsByPostId(Long postId) {
         List<Comment> comments = commentRepository.findByPostPid(postId);
         List<CommentDTO> commentDTOs = new ArrayList<>();
         for (Comment comment : comments) {
