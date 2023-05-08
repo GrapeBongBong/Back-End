@@ -8,6 +8,8 @@ import com.example.capstone.entity.*;
 import com.example.capstone.repository.PostRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,7 +32,7 @@ import static com.example.capstone.entity.ExchangePost.formatDate;
 @Slf4j
 public class PostService {
     private final PostRepository postRepository;
-    private static final String UPLOAD_DIR = "classpath:images/"; // 이미지를 저장할 디렉토리 경로
+    private final Environment environment;
 
     public List<String> save(PostDTO postDTO, List<MultipartFile> imageFiles, UserEntity userEntity) throws IOException {
 
@@ -63,18 +65,20 @@ public class PostService {
         for (MultipartFile imageFile: imageFiles) {
             PostImage image = new PostImage();
             String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename(); // 파일 이름 생성
-            String filePath = ResourceUtils.getFile("classpath:images/").getPath() + "/" + fileName;
-            imageFile.transferTo(new File(filePath));
-            log.info("filePath = " + filePath);
-            String imageUrl = filePath + fileName;
+            String imageStorageLocation = environment.getProperty("app.image.storage.location");
+            File destinationFile = new File(imageStorageLocation + "/" + fileName);
+            imageFile.transferTo(destinationFile);
+//            String filePath = ResourceUtils.getFile("classpath:images/").getPath() + "/" + fileName;
+//            imageFile.transferTo(new File(filePath));
+            log.info("filePath = " + imageStorageLocation);
 
             image.setPost(completedPost);
             image.setFileName(fileName);
             image.setFileOriginName(imageFile.getOriginalFilename());
-            image.setFileUrl(imageUrl);
+            image.setFileUrl(imageStorageLocation);
 //            image.setImage(imageFile.getBytes());
             postImages.add(image);
-            imageUrls.add(imageUrl);
+            imageUrls.add(imageStorageLocation);
         }
 
         return imageUrls;
