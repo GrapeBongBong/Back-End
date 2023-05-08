@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -36,6 +37,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,6 +45,7 @@ import java.util.Optional;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/exchange")
+@Slf4j
 public class ExchangePostController {
 
     private final UserRepository userRepository;
@@ -92,25 +95,32 @@ public class ExchangePostController {
 
             String id = userDetails.getUsername(); // UserDetails 객체에서 사용자 아이디를 가져옴
 
-            // UserEntity를 사용자 아이디를 기반으로 조회
+            // UserEntity 를 사용자 아이디를 기반으로 조회
             Optional<UserEntity> loggedInUserEntity = userRepository.findById(id);
             UserEntity userEntity = null;
 
             if (loggedInUserEntity.isPresent()) {
                 userEntity = loggedInUserEntity.get();
-                Long uid = userEntity.getUid(); // 가져온 UserEntity 객체에서 Uid를 가져옴
-                System.out.println("User = " + userEntity);
-                System.out.println("uid = " + uid);
 
-                // 가져온 Uid 를 해당 포스트 컬럼에 추가
-                postService.save(exchangePostDTO, imageFiles, userEntity);
+                // 이미지가 없는 경우
+                if (imageFiles == null) {
+                    postService.save(exchangePostDTO, null, userEntity); // 가져온 userEntity 를 해당 포스트 컬럼에 추가
+                    responseJson.put("message", "재능거래 게시물이 성공적으로 등록되었습니다.");
 
-                responseJson.put("message", "재능거래 게시물이 성공적으로 등록되었습니다.");
+                    return ResponseEntity.status(HttpStatus.CREATED)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                } else {
+                    List<String> imageUrls = new ArrayList<>();
+                    imageUrls = postService.save(exchangePostDTO, imageFiles, userEntity); // 가져온 userEntity 를 해당 포스트 컬럼에 추가
 
-                return ResponseEntity.status(HttpStatus.CREATED)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    JsonNode imageUrlList = objectMapper.convertValue(imageUrls, JsonNode.class);
 
+                    return ResponseEntity.status(HttpStatus.CREATED)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(imageUrlList);
+                }
             } else {
                 responseJson.put("message", "회원이 아닙니다.");
 
