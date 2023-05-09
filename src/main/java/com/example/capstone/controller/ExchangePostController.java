@@ -62,7 +62,8 @@ public class ExchangePostController {
     })
 
     @PostMapping(value = "/post", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity<?> createPost(@Valid @RequestPart ExchangePostDTO exchangePostDTO, @RequestPart(value = "images", required = false) List<MultipartFile> imageFiles, BindingResult bindingResult, HttpServletRequest request) {
+    public ResponseEntity<?> createPost(@Valid @RequestPart ExchangePostDTO exchangePostDTO,
+                                        @RequestPart(value = "images", required = false) List<MultipartFile> imageFiles, BindingResult bindingResult, HttpServletRequest request) {
 
         responseJson = JsonNodeFactory.instance.objectNode();
 
@@ -105,12 +106,17 @@ public class ExchangePostController {
                 // 이미지가 없는 경우
                 if (imageFiles == null) {
                     postService.save(exchangePostDTO, null, userEntity); // 가져온 userEntity 를 해당 포스트 컬럼에 추가
-                    responseJson.put("message", "재능거래 게시물이 성공적으로 등록되었습니다.");
-
-                    return ResponseEntity.status(HttpStatus.CREATED)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(responseJson);
                 } else {
+                    postService.save(exchangePostDTO, imageFiles, userEntity);
+                }
+
+                responseJson.put("message", "재능거래 게시물이 성공적으로 등록되었습니다.");
+
+                return ResponseEntity.status(HttpStatus.CREATED)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(responseJson);
+
+                /*else {
                     List<String> imageUrls = new ArrayList<>();
                     imageUrls = postService.save(exchangePostDTO, imageFiles, userEntity); // 가져온 userEntity 를 해당 포스트 컬럼에 추가
 
@@ -120,7 +126,7 @@ public class ExchangePostController {
                     return ResponseEntity.status(HttpStatus.CREATED)
                             .contentType(MediaType.APPLICATION_JSON)
                             .body(imageUrlList);
-                }
+                }*/
             } else {
                 responseJson.put("message", "회원이 아닙니다.");
 
