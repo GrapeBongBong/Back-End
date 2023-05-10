@@ -420,4 +420,46 @@ public class ExchangePostController {
                     .body(responseJson);
         }
     }*/
+
+    // '좋아요' 추가 API
+    @PostMapping("/{postId}/like")
+    public ResponseEntity<?> likePost(@PathVariable Long postId, HttpServletRequest request) {
+        try {
+            // 토큰 값 추출
+            String token = request.getHeader("Authorization");
+            token = token.replaceAll("Bearer ", "");
+            // 토큰 검증
+            if (!tokenProvider.validateToken(token)) {
+                responseJson.put("message", "유효하지 않은 토큰입니다.");
+
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(responseJson);
+            } else {
+                // postId 에 해당하는 게시물 조회
+                Post post = postRepository.findByPid(postId);
+                if (post == null) {
+                    responseJson.put("message", "없거나 삭제된 게시글입니다.");
+
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                }
+
+                // 좋아요 수 증가
+                postService.likePost(post);
+                responseJson.put("message", "게시물에 좋아요를 눌렀습니다.");
+                return ResponseEntity.status(HttpStatus.OK)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(responseJson);
+            }
+        } catch (Exception e) {
+            responseJson = JsonNodeFactory.instance.objectNode();
+            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(responseJson);
+        }
+    }
 }
