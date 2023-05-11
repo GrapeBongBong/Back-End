@@ -20,6 +20,7 @@ public class CommentDTO { //댓글 정보 전송시 사용
     private String date; //댓글 작성일자
     private Long userId; //사용자 ID
 
+
     // Comment 엔티티를 CommentDTO로 매핑
     public static CommentDTO tocommentDTO(Comment comment) {
         CommentDTO commentDTO = new CommentDTO();
