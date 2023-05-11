@@ -1,6 +1,8 @@
 package com.example.capstone.controller;
 
 import com.example.capstone.data.LoginResponse;
+import com.example.capstone.data.ServerErrorResponse;
+import com.example.capstone.data.TokenResponse;
 import com.example.capstone.dto.ExchangePostDTO;
 import com.example.capstone.dto.PageResponse;
 import com.example.capstone.entity.ExchangePost;
@@ -21,6 +23,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.servers.Server;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -83,21 +86,11 @@ public class ExchangePostController {
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
-                responseJson.put("message", "유효하지 않은 토큰입니다.");
-
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             }
 
-            // 헤더에 첨부되어 있는 token 에서 로그인 된 사용자 정보 받아옴
-            Authentication authentication = tokenProvider.getAuthentication(token);
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-
-            String id = userDetails.getUsername(); // UserDetails 객체에서 사용자 아이디를 가져옴
-
-            // UserEntity 를 사용자 아이디를 기반으로 조회
-            Optional<UserEntity> loggedInUserEntity = userRepository.findById(id);
+            // token 을 통해 UserEntity 조회
+            Optional<UserEntity> loggedInUserEntity = TokenResponse.getLoggedInUser(tokenProvider, token, userRepository);
             UserEntity userEntity = null;
 
             if (loggedInUserEntity.isPresent()) {
@@ -136,11 +129,7 @@ public class ExchangePostController {
 
             }
         } catch (Exception e) {
-            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(responseJson);
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
 
@@ -235,11 +224,7 @@ public class ExchangePostController {
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
-                responseJson.put("message", "유효하지 않은 토큰입니다.");
-
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             } else {
                 // Pid 이용하여 게시글 조회
                 Post post = postRepository.findByPid(postId);
@@ -288,11 +273,7 @@ public class ExchangePostController {
                 }
             }
         } catch (Exception e) {
-            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(responseJson);
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
 
@@ -307,11 +288,7 @@ public class ExchangePostController {
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
-                responseJson.put("message", "유효하지 않은 토큰입니다.");
-
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             } else {
                 // exchangePost 타입만 가져오기
                 List<ExchangePost> exchangePostList = (List<ExchangePost>) postRepository.findByPostType(PostType.T);
@@ -326,12 +303,7 @@ public class ExchangePostController {
             }
 
         } catch (Exception e) {
-            responseJson = JsonNodeFactory.instance.objectNode();
-            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(responseJson);
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
 
@@ -346,17 +318,12 @@ public class ExchangePostController {
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
-                responseJson.put("message", "유효하지 않은 토큰입니다.");
-
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             } else {
                 // 페이지 정보를 이용하여 ExchangePost를 조회하고, ExchangePostDTO로 변환
                 Page<ExchangePost> exchangePostPage = postRepository.findByPostType(PostType.T, pageable);
                 // 변환된 ExchangePostDTO 리스트와 페이지 정보를 담은 객체 생성
                 PageResponse<ExchangePostDTO> pageResponse = PageResponse.from(exchangePostPage.map(ExchangePostDTO::toExchangePostDTO));
-
 
                 return ResponseEntity.status(HttpStatus.OK)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -364,12 +331,7 @@ public class ExchangePostController {
             }
 
         } catch (Exception e) {
-            responseJson = JsonNodeFactory.instance.objectNode();
-            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(responseJson);
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
     // 게시글 상세 조회 API

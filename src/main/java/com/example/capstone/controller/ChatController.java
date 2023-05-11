@@ -1,5 +1,7 @@
 package com.example.capstone.controller;
 
+import com.example.capstone.data.ServerErrorResponse;
+import com.example.capstone.data.TokenResponse;
 import com.example.capstone.dto.ChatDTO;
 import com.example.capstone.dto.ChatRoomDTO;
 import com.example.capstone.entity.ChatRoom;
@@ -46,11 +48,7 @@ public class ChatController {
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
-                responseJson.put("message", "유효하지 않은 토큰입니다.");
-
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             }
 
             String userId = chatDTO.getApplicantId();
@@ -76,12 +74,7 @@ public class ChatController {
                         .body(responseJson);
             }
         } catch (Exception e) {
-            responseJson = JsonNodeFactory.instance.objectNode();
-            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(responseJson);
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
 
@@ -96,11 +89,7 @@ public class ChatController {
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
-                responseJson.put("message", "유효하지 않은 토큰입니다.");
-
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             }
 
             List<ChatRoom> chatRooms = chatService.getAllRooms();
@@ -111,12 +100,7 @@ public class ChatController {
                     .body(chatRoomDTOList);
 
         } catch (Exception e) {
-            responseJson = JsonNodeFactory.instance.objectNode();
-            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(responseJson);
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
 
