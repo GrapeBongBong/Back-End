@@ -7,61 +7,81 @@ import com.example.capstone.dto.PostDTO;
 import com.example.capstone.entity.*;
 import com.example.capstone.repository.PostRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.data.domain.*;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ResourceUtils;
 import org.springframework.web.multipart.MultipartFile;
-import com.example.capstone.dto.PostDTO;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static com.example.capstone.entity.ExchangePost.formatDate;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class PostService {
     private final PostRepository postRepository;
+    private final Environment environment;
 
-    public void save(PostDTO postDTO, List<MultipartFile> imageFiles, UserEntity userEntity) throws IOException {
+    public List<String> save(PostDTO postDTO, List<MultipartFile> imageFiles, UserEntity userEntity) throws IOException {
 
         Post completedPost = new Post();
         List<PostImage> postImages = new ArrayList<>();
+        List<String> imageUrls = new ArrayList<>();
 
         System.out.println("PostDTO = " + postDTO.toString());
 
-        System.out.println("imageFiles = " + imageFiles.get(0).getOriginalFilename());
-
         if (postDTO.getPostType() == PostType.T) { // 재능교환 게시물일 경우 ExchangePost 로 저장
             completedPost = ExchangePost.toExchangePost((ExchangePostDTO) postDTO);
-            if (imageFiles != null) { // 이미지 첨부한 경우
-                saveImages(imageFiles, completedPost, postImages);
-                completedPost.setPostImages(postImages);
-            }
-            completedPost.setUser(userEntity); // 받아온 사용자 정보를 이용해서 게시물 작성자 정보 저장
-
         } else if (postDTO.getPostType() == PostType.A) { // 익명 커뮤니티 게시물일 경우 AnonymousPost 로 저장
             completedPost = AnonymousPost.toAnonymousPost((AnonymousPostDTO) postDTO);
-            if (imageFiles != null) { // 이미지 첨부한 경우
-                saveImages(imageFiles, completedPost, postImages);
-                completedPost.setPostImages(postImages);
-            }
-            completedPost.setUser(userEntity);
         }
+
+        if (imageFiles != null) { // 이미지 첨부한 경우
+            imageUrls = saveImages(imageFiles, completedPost, postImages);
+            completedPost.setPostImages(postImages);
+        }
+        completedPost.setUser(userEntity); // 받아온 사용자 정보를 이용해서 게시물 작성자 정보 저장
 
         postRepository.save(completedPost);
+
+        return imageUrls;
     }
 
-    private void saveImages(List<MultipartFile> imageFiles, Post completedPost, List<PostImage> postImages) throws IOException {
+    private List<String> saveImages(List<MultipartFile> imageFiles, Post completedPost, List<PostImage> postImages) throws IOException {
+        List<String> imageUrls = new ArrayList<>();
+
         for (MultipartFile imageFile: imageFiles) {
             PostImage image = new PostImage();
+            String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename(); // 파일 이름 생성
+            String imageStorageLocation = environment.getProperty("app.image.storage.location");
+            File destinationFile = new File(imageStorageLocation + "/" + fileName);
+            imageFile.transferTo(destinationFile);
+//            String filePath = ResourceUtils.getFile("classpath:images/").getPath() + "/" + fileName;
+//            imageFile.transferTo(new File(filePath));
+            log.info("filePath = " + imageStorageLocation);
+
             image.setPost(completedPost);
-            image.setImage(imageFile.getBytes());
+            image.setFileName(fileName);
+            image.setFileOriginName(imageFile.getOriginalFilename());
+            image.setFileUrl(imageStorageLocation);
+//            image.setImage(imageFile.getBytes());
             postImages.add(image);
+            imageUrls.add(imageStorageLocation);
         }
+
+        return imageUrls;
     }
 
     public void delete(Post post) {
@@ -79,7 +99,6 @@ public class PostService {
             exchangePost.setGiveTalent(exchangePostDTO.getGiveTalent());
             exchangePost.setTakeCate(exchangePostDTO.getTakeCate());
             exchangePost.setTakeTalent(exchangePostDTO.getTakeTalent());
-            // 이미지 세팅 추가하기
 
             // 시간대 정보 저장
             AvailableTime availableTime = exchangePostDTO.getAvailableTime();

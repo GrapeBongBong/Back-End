@@ -1,6 +1,7 @@
 package com.example.capstone.controller;
 
-import com.example.capstone.data.BasicResponse;
+import com.example.capstone.data.ServerErrorResponse;
+import com.example.capstone.data.TokenResponse;
 import com.example.capstone.dto.UserProfileDTO;
 import com.example.capstone.jwt.TokenProvider;
 import com.example.capstone.service.UserProfileService;
@@ -36,12 +37,7 @@ public class UserProfileController {
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
-                responseJson = JsonNodeFactory.instance.objectNode();
-                responseJson.put("message", "유효하지 않은 토큰입니다.");
-
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
 
             } else {
                 // 헤더에 첨부되어 있는 token 에서 로그인 된 사용자 정보 받아옴
@@ -61,12 +57,7 @@ public class UserProfileController {
                         .body(responseJson);
             }
         } catch (Exception e) {
-            responseJson = JsonNodeFactory.instance.objectNode();
-            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(responseJson);
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
 }

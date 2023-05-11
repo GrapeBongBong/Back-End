@@ -1,6 +1,7 @@
 package com.example.capstone.controller;
 
 import com.example.capstone.data.LoginResponse;
+import com.example.capstone.data.ServerErrorResponse;
 import com.example.capstone.dto.LoginDTO;
 import com.example.capstone.dto.UserDTO;
 import com.example.capstone.entity.UserEntity;
@@ -108,12 +109,7 @@ public class AuthController {
                         .body(responseJson);
             }
         } catch (Exception e) {
-            responseJson = JsonNodeFactory.instance.objectNode();
-            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(responseJson);
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
 
@@ -168,12 +164,7 @@ public class AuthController {
                         .body(responseJson);
             }
         } catch (Exception e) {
-            responseJson = JsonNodeFactory.instance.objectNode();
-            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(responseJson);
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
 }

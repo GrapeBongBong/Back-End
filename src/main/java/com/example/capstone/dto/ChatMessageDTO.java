@@ -1,5 +1,6 @@
 package com.example.capstone.dto;
 
+import com.example.capstone.entity.ChatMessage;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -8,7 +9,6 @@ import lombok.Setter;
 @Data
 @Getter
 @Setter
-@Builder
 public class ChatMessageDTO {
 
     // 일대일이니까 대화 상태만 있어도 될 듯?
@@ -22,4 +22,13 @@ public class ChatMessageDTO {
     private Long roomId; // 메시지를 보낼 채팅방 id
     private String senderId; // 보내는 사람의 아이디
     private String message;
+
+    public static ChatMessageDTO toChatMessageDTO(ChatMessage chatMessage) {
+        ChatMessageDTO chatMessageDTO = new ChatMessageDTO();
+        chatMessageDTO.setRoomId(chatMessage.getChatRoom().getRoomId());
+        chatMessageDTO.setSenderId(chatMessage.getSender().getId());
+        chatMessageDTO.setMessage(chatMessage.getMessage());
+
+        return chatMessageDTO;
+    }
 }
