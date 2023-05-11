@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import com.example.capstone.dto.CommentDTO;
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 @Entity
@@ -46,6 +47,12 @@ public class Comment {
 
     public void updateComment(String content) {
         this.content = content;
+    }
+
+    public static String formatDate(LocalDateTime localDateTime) {
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String formattedTime = localDateTime.format(dateTimeFormatter);
+        return formattedTime;
     }
 
 }
