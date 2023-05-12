@@ -68,6 +68,9 @@ dependencies {
 	//Hibernate5Module
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate5:2.13.0'
 
+	// AWS S3
+	implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
+
 }
 
 dependencyManagement {
