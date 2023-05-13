@@ -66,15 +66,19 @@ public class PostService {
     private void saveImages(List<MultipartFile> imageFiles, Post completedPost, List<PostImage> postImages) throws IOException {
 
         for (MultipartFile imageFile: imageFiles) {
-            File uploadFile = convert(imageFile)
-                    .orElseThrow(() -> new IllegalArgumentException("MultipartFile -> File 전환 실패"));
-
-            log.info("uploadFile: {}", "파일전환 됨");
-
-            String fileName = "images/" + UUID.randomUUID() + "_" + uploadFile.getName(); // S3 에 저장할 파일명
+//            File uploadFile = convert(imageFile)
+//                    .orElseThrow(() -> new IllegalArgumentException("MultipartFile -> File 전환 실패"));
+            String fileName = imageFile.getOriginalFilename();
+            String key = UUID.randomUUID() + "/" + fileName; // S3 에 저장할 파일명
             log.info("fileName: {}", fileName);
-            amazonS3Client.putObject(new PutObjectRequest(bucket, fileName, uploadFile).withCannedAcl(CannedAccessControlList.PublicRead)); // S3 에 파일 업로드
-            log.info("image 업로드 {}: ", amazonS3Client.getUrl(bucket, fileName).toString());
+            ObjectMetadata objectMetadata = new ObjectMetadata();
+            objectMetadata.setContentType(imageFile.getContentType());
+            objectMetadata.setContentLength(imageFile.getSize());
+//            amazonS3Client.putObject(new PutObjectRequest(bucket, fileName, uploadFile).withCannedAcl(CannedAccessControlList.PublicRead)); // S3 에 파일 업로드
+//            log.info("image 업로드 {}: ", amazonS3Client.getUrl(bucket, fileName).toString());
+            PutObjectRequest request = new PutObjectRequest(bucket, key, imageFile.getInputStream(), objectMetadata)
+                    .withCannedAcl(CannedAccessControlList.PublicRead);
+            amazonS3Client.putObject(request);
         }
     }
 
