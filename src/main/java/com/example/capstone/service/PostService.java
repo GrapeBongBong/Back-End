@@ -1,5 +1,9 @@
 package com.example.capstone.service;
 
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.CannedAccessControlList;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.example.capstone.data.AvailableTime;
 import com.example.capstone.dto.AnonymousPostDTO;
 import com.example.capstone.dto.ExchangePostDTO;
@@ -7,38 +11,36 @@ import com.example.capstone.dto.PostDTO;
 import com.example.capstone.entity.*;
 import com.example.capstone.repository.PostRepository;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ResourceUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static com.example.capstone.entity.ExchangePost.formatDate;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class PostService {
     private final PostRepository postRepository;
-    private final Environment environment;
 
-    public List<String> save(PostDTO postDTO, List<MultipartFile> imageFiles, UserEntity userEntity) throws IOException {
+    private final AmazonS3Client amazonS3Client;
+
+    @Value("${cloud.aws.s3.bucket}")
+    private String bucket;
+
+    public void save(PostDTO postDTO, List<MultipartFile> imageFiles, UserEntity userEntity) throws IOException {
 
         Post completedPost = new Post();
         List<PostImage> postImages = new ArrayList<>();
-        List<String> imageUrls = new ArrayList<>();
 
         System.out.println("PostDTO = " + postDTO.toString());
 
@@ -49,39 +51,52 @@ public class PostService {
         }
 
         if (imageFiles != null) { // 이미지 첨부한 경우
-            imageUrls = saveImages(imageFiles, completedPost, postImages);
+            saveImages(imageFiles, completedPost, postImages);
             completedPost.setPostImages(postImages);
         }
         completedPost.setUser(userEntity); // 받아온 사용자 정보를 이용해서 게시물 작성자 정보 저장
 
         postRepository.save(completedPost);
-
-        return imageUrls;
     }
 
-    private List<String> saveImages(List<MultipartFile> imageFiles, Post completedPost, List<PostImage> postImages) throws IOException {
-        List<String> imageUrls = new ArrayList<>();
+    // MultipartFile 을 전달받아 File 로 전환한 후 S3 에 업로드
+    private void saveImages(List<MultipartFile> imageFiles, Post completedPost, List<PostImage> postImages) throws IOException {
 
         for (MultipartFile imageFile: imageFiles) {
-            PostImage image = new PostImage();
-            String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename(); // 파일 이름 생성
-            String imageStorageLocation = environment.getProperty("app.image.storage.location");
-            File destinationFile = new File(imageStorageLocation + "/" + fileName);
-            imageFile.transferTo(destinationFile);
+            File uploadFile = convert(imageFile)
+                    .orElseThrow(() -> new IllegalArgumentException("MultipartFile -> File 전환 실패"));
+
+            String fileName = "images/" + UUID.randomUUID() + "_" + imageFile.getOriginalFilename(); // 파일 이름 생성
+            ObjectMetadata objectMetadata = new ObjectMetadata(); // 파일 사이즈를 ContentLength 로 S3 에 알려주기 위해서
+            objectMetadata.setContentLength(imageFile.getInputStream().available());
+            amazonS3Client.putObject(bucket, fileName, imageFile.getInputStream(), objectMetadata);
+//            String imageStorageLocation = environment.getProperty("app.image.storage.location");
+//            String imageStorageLocation = putS3(uploadFile, fileName);
+//            File destinationFile = new File(imageStorageLocation + "/" + fileName);
+//            imageFile.transferTo(destinationFile);
 //            String filePath = ResourceUtils.getFile("classpath:images/").getPath() + "/" + fileName;
 //            imageFile.transferTo(new File(filePath));
-            log.info("filePath = " + imageStorageLocation);
+//            log.info("filePath = " + imageStorageLocation);
 
+            PostImage image = new PostImage();
             image.setPost(completedPost);
             image.setFileName(fileName);
             image.setFileOriginName(imageFile.getOriginalFilename());
-            image.setFileUrl(imageStorageLocation);
-//            image.setImage(imageFile.getBytes());
+            image.setFileUrl(amazonS3Client.getUrl(bucket, fileName).toString());
             postImages.add(image);
-            imageUrls.add(imageStorageLocation);
+//            imageUrls.add(imageStorageLocation);
         }
+    }
 
-        return imageUrls;
+    public Optional<File> convert(MultipartFile imageFile) throws IOException {
+        File convertFile = new File(Objects.requireNonNull(imageFile.getOriginalFilename()));
+        if (convertFile.createNewFile()) {
+            try (FileOutputStream fos = new FileOutputStream(convertFile)) {
+                fos.write(imageFile.getBytes());
+            }
+            return Optional.of(convertFile);
+        }
+        return Optional.empty();
     }
 
     public void delete(Post post) {
