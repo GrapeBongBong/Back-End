@@ -15,12 +15,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -66,30 +69,18 @@ public class PostService {
             File uploadFile = convert(imageFile)
                     .orElseThrow(() -> new IllegalArgumentException("MultipartFile -> File 전환 실패"));
 
-            String fileName = "images/" + UUID.randomUUID() + "_" + imageFile.getOriginalFilename(); // 파일 이름 생성
-            ObjectMetadata objectMetadata = new ObjectMetadata(); // 파일 사이즈를 ContentLength 로 S3 에 알려주기 위해서
-            objectMetadata.setContentLength(imageFile.getInputStream().available());
-            amazonS3Client.putObject(bucket, fileName, imageFile.getInputStream(), objectMetadata);
-//            String imageStorageLocation = environment.getProperty("app.image.storage.location");
-//            String imageStorageLocation = putS3(uploadFile, fileName);
-//            File destinationFile = new File(imageStorageLocation + "/" + fileName);
-//            imageFile.transferTo(destinationFile);
-//            String filePath = ResourceUtils.getFile("classpath:images/").getPath() + "/" + fileName;
-//            imageFile.transferTo(new File(filePath));
-//            log.info("filePath = " + imageStorageLocation);
+            log.info("uploadFile: {}", "파일전환 됨");
 
-            PostImage image = new PostImage();
-            image.setPost(completedPost);
-            image.setFileName(fileName);
-            image.setFileOriginName(imageFile.getOriginalFilename());
-            image.setFileUrl(amazonS3Client.getUrl(bucket, fileName).toString());
-            postImages.add(image);
-//            imageUrls.add(imageStorageLocation);
+            String fileName = "images/" + UUID.randomUUID() + "_" + uploadFile.getName(); // S3 에 저장할 파일명
+            log.info("fileName: {}", fileName);
+            amazonS3Client.putObject(new PutObjectRequest(bucket, fileName, uploadFile).withCannedAcl(CannedAccessControlList.PublicRead)); // S3 에 파일 업로드
+            log.info("image 업로드 {}: ", amazonS3Client.getUrl(bucket, fileName).toString());
         }
     }
 
+    // 파일 convert 후 로컬에 업로드
     public Optional<File> convert(MultipartFile imageFile) throws IOException {
-        File convertFile = new File(Objects.requireNonNull(imageFile.getOriginalFilename()));
+        File convertFile = new File("/home/ec2-user/images/" + imageFile.getOriginalFilename());
         if (convertFile.createNewFile()) {
             try (FileOutputStream fos = new FileOutputStream(convertFile)) {
                 fos.write(imageFile.getBytes());
