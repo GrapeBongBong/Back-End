@@ -69,15 +69,14 @@ public class PostService {
 //            File uploadFile = convert(imageFile)
 //                    .orElseThrow(() -> new IllegalArgumentException("MultipartFile -> File 전환 실패"));
             String fileName = imageFile.getOriginalFilename();
-            String key = UUID.randomUUID() + "/" + fileName; // S3 에 저장할 파일명
+            String fileUrl = "https://" + bucket + "/jeinie" + fileName;
+            String uploadFileName = UUID.randomUUID() + "/" + fileName; // S3 에 저장할 파일명
             log.info("fileName: {}", fileName);
             ObjectMetadata objectMetadata = new ObjectMetadata();
             objectMetadata.setContentType(imageFile.getContentType());
-//            amazonS3Client.putObject(new PutObjectRequest(bucket, fileName, uploadFile).withCannedAcl(CannedAccessControlList.PublicRead)); // S3 에 파일 업로드
-//            log.info("image 업로드 {}: ", amazonS3Client.getUrl(bucket, fileName).toString());
-            PutObjectRequest request = new PutObjectRequest(bucket, key, imageFile.getInputStream(), objectMetadata)
-                    .withCannedAcl(CannedAccessControlList.PublicRead);
-            amazonS3Client.putObject(request);
+            objectMetadata.setContentLength(imageFile.getSize());
+            amazonS3Client.putObject(bucket, uploadFileName, imageFile.getInputStream(), objectMetadata); // S3 에 파일 업로드
+            log.info("image 업로드 {}: ", amazonS3Client.getUrl(bucket, fileName).toString());
         }
     }
 
