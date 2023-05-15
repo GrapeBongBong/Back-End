@@ -73,7 +73,6 @@ public class PostService {
             log.info("fileName: {}", fileName);
             ObjectMetadata objectMetadata = new ObjectMetadata();
             objectMetadata.setContentType(imageFile.getContentType());
-            objectMetadata.setContentLength(imageFile.getSize());
 //            amazonS3Client.putObject(new PutObjectRequest(bucket, fileName, uploadFile).withCannedAcl(CannedAccessControlList.PublicRead)); // S3 에 파일 업로드
 //            log.info("image 업로드 {}: ", amazonS3Client.getUrl(bucket, fileName).toString());
             PutObjectRequest request = new PutObjectRequest(bucket, key, imageFile.getInputStream(), objectMetadata)

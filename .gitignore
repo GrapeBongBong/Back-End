@@ -5,8 +5,8 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### application.properties ###
-application.properties
+### application-aws.properties ###
+application-aws.properties
 
 ### STS ###
 .apt_generated
