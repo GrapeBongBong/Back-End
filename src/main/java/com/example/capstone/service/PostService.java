@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -54,7 +55,15 @@ public class PostService {
         }
 
         if (imageFiles != null) { // 이미지 첨부한 경우
-            saveImages(imageFiles, completedPost, postImages);
+            List<String> imageUrls = new ArrayList<>();
+            imageUrls = saveImages(imageFiles);
+            log.info("imageUrls: {}", imageUrls);
+            for (String imageUrl: imageUrls) {
+                PostImage postImage = new PostImage();
+                postImage.setPost(completedPost);
+                postImage.setFileUrl(imageUrl);
+                postImages.add(postImage);
+            }
             completedPost.setPostImages(postImages);
         }
         completedPost.setUser(userEntity); // 받아온 사용자 정보를 이용해서 게시물 작성자 정보 저장
@@ -63,7 +72,9 @@ public class PostService {
     }
 
     // MultipartFile 을 전달받아 File 로 전환한 후 S3 에 업로드
-    private void saveImages(List<MultipartFile> imageFiles, Post completedPost, List<PostImage> postImages) throws IOException {
+    private List<String> saveImages(List<MultipartFile> imageFiles) throws IOException {
+
+        List<String> imageUrls = new ArrayList<>();
 
         for (MultipartFile imageFile: imageFiles) {
             // 메타데이터 설정
@@ -73,24 +84,15 @@ public class PostService {
 
             // S3 bucket 디렉토리명 설정
             String fileName = imageFile.getOriginalFilename();
-            String fileUrl = "https://" + bucket + "/images" + fileName;
             String uploadFileName = UUID.randomUUID() + "_" + fileName; // S3 에 저장할 파일명
             log.info("uploadFileName: {}", uploadFileName);
             amazonS3Client.putObject(bucket, "images/" + uploadFileName, imageFile.getInputStream(), objectMetadata); // S3 에 파일 업로드
-            log.info("image 업로드 {}: ", amazonS3Client.getUrl(bucket, fileName).toString());
-        }
-    }
+            String imageUrl = amazonS3Client.getUrl(bucket, "images/" + uploadFileName).toString();
+            log.info("image 업로드 {}: ", imageUrl);
 
-    // 파일 convert 후 로컬에 업로드
-    public Optional<File> convert(MultipartFile imageFile) throws IOException {
-        File convertFile = new File("/home/ec2-user/images/" + imageFile.getOriginalFilename());
-        if (convertFile.createNewFile()) {
-            try (FileOutputStream fos = new FileOutputStream(convertFile)) {
-                fos.write(imageFile.getBytes());
-            }
-            return Optional.of(convertFile);
+            imageUrls.add(imageUrl);
         }
-        return Optional.empty();
+        return imageUrls;
     }
 
     public void delete(Post post) {

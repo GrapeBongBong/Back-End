@@ -24,12 +24,6 @@ public class PostImage {
     /*@Lob
     private byte[] image;*/
 
-    @Column(name = "fileName", nullable = false)
-    private String fileName;
-
-    @Column(name = "fileOriginName", nullable = false)
-    private String fileOriginName;
-
     @Column(name = "fileUrl", nullable = false)
     private String fileUrl;
 
