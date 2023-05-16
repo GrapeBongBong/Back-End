@@ -34,11 +34,12 @@ import static com.example.capstone.entity.ExchangePost.formatDate;
 @Slf4j
 public class PostService {
     private final PostRepository postRepository;
-
     private final AmazonS3Client amazonS3Client;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
+
+    private static final String S3_BUCKET_DIRECTORY_NAME = "images";
 
     public void save(PostDTO postDTO, List<MultipartFile> imageFiles, UserEntity userEntity) throws IOException {
 
@@ -66,15 +67,16 @@ public class PostService {
     private void saveImages(List<MultipartFile> imageFiles, Post completedPost, List<PostImage> postImages) throws IOException {
 
         for (MultipartFile imageFile: imageFiles) {
-//            File uploadFile = convert(imageFile)
-//                    .orElseThrow(() -> new IllegalArgumentException("MultipartFile -> File 전환 실패"));
-            String fileName = imageFile.getOriginalFilename();
-            String fileUrl = "https://" + bucket + "/jeinie" + fileName;
-            String uploadFileName = UUID.randomUUID() + "/" + fileName; // S3 에 저장할 파일명
-            log.info("fileName: {}", fileName);
+            // 메타데이터 설정
             ObjectMetadata objectMetadata = new ObjectMetadata();
             objectMetadata.setContentType(imageFile.getContentType());
             objectMetadata.setContentLength(imageFile.getSize());
+
+            // S3 bucket 디렉토리명 설정
+            String fileName = imageFile.getOriginalFilename();
+            String fileUrl = "https://" + bucket + "/images" + fileName;
+            String uploadFileName = UUID.randomUUID() + "/" + fileName; // S3 에 저장할 파일명
+            log.info("fileName: {}", fileName);
             amazonS3Client.putObject(bucket, uploadFileName, imageFile.getInputStream(), objectMetadata); // S3 에 파일 업로드
             log.info("image 업로드 {}: ", amazonS3Client.getUrl(bucket, fileName).toString());
         }

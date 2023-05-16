@@ -53,7 +53,7 @@ public class ChatHandler extends TextWebSocketHandler { // Client 가 Send 할 �
         // 해당 채팅방의 세션들에게 메시지 전송
         List<WebSocketSession> roomSessions = chatSessions.getOrDefault(chatRoomId, new ArrayList<>());
         for (WebSocketSession roomSession: roomSessions) {
-            roomSession.sendMessage(new TextMessage(objectMapper.writeValueAsString(chatMessageDTO)));
+            roomSession.sendMessage(new TextMessage(chatMessageDTO.getMessage()));
         }
     }
 

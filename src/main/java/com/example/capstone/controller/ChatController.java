@@ -92,6 +92,7 @@ public class ChatController {
                 return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             }
 
+            // 현재 사용자가 작성한 게시글에 대한 채팅방만 가져오기
             List<ChatRoom> chatRooms = chatService.getAllRooms();
             List<ChatRoomDTO> chatRoomDTOList = ChatRoomDTO.toChatRoomDTOList(chatRooms);
 
