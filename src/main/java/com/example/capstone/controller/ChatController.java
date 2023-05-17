@@ -6,7 +6,6 @@ import com.example.capstone.data.TokenResponse;
 import com.example.capstone.dto.ChatDTO;
 import com.example.capstone.dto.ChatRoomDTO;
 import com.example.capstone.entity.ChatRoom;
-import com.example.capstone.entity.ExchangePost;
 import com.example.capstone.entity.Post;
 import com.example.capstone.entity.UserEntity;
 import com.example.capstone.jwt.TokenProvider;
@@ -92,8 +91,8 @@ public class ChatController {
 
     // 채팅방 목록 조회 API
     @Transactional
-    @GetMapping("/rooms")
-    public ResponseEntity<?> getARooms(HttpServletRequest request) { // HttpServletRequest request 나중에 추가할 것
+    @GetMapping("/rooms/{postId}")
+    public ResponseEntity<?> getARooms(@PathVariable Long postId, HttpServletRequest request) { // HttpServletRequest request 나중에 추가할 것
         try {
             // 토큰 값 추출
             String token = request.getHeader("Authorization");
@@ -106,7 +105,12 @@ public class ChatController {
 
             // 현재 사용자가 작성한 게시글에 대한 채팅방만 가져오기
             // 게시글 기준으로 분류해서 체팅방 조회
-            List<ChatRoom> chatRooms = chatService.getAllRooms();
+            Post post = postRepository.findByPid(postId);
+            if (post == null) {
+                return PostResponse.notExistPost("없거나 삭제된 게시물입니다.");
+            }
+
+            List<ChatRoom> chatRooms = chatService.getRoomsByPostId(postId);
             List<ChatRoomDTO> chatRoomDTOList = ChatRoomDTO.toChatRoomDTOList(chatRooms);
 
             return ResponseEntity.status(HttpStatus.OK)

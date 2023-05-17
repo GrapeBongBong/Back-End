@@ -4,6 +4,7 @@ import com.example.capstone.dto.ChatMessageDTO;
 import com.example.capstone.entity.*;
 import com.example.capstone.repository.ChatMessageRepository;
 import com.example.capstone.repository.ChatRoomRepository;
+import com.example.capstone.repository.PostRepository;
 import com.example.capstone.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,14 +21,14 @@ import java.util.Optional;
 public class ChatService {
 
     private final UserRepository userRepository;
+    private final PostRepository postRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
 
-    public List<ChatRoom> getAllRooms() {
-        return chatRoomRepository.findAll();
+    public List<ChatRoom> getRoomsByPostId(Long postId) {
+        ExchangePost exchangePost = (ExchangePost) postRepository.findByPid(postId);
+        return chatRoomRepository.findChatRoomsByExchangePost(exchangePost);
     }
-
-    public ChatRoom findRoomById(Long roomId) { return chatRoomRepository.findChatRoomByRoomId(roomId); }
 
     public ChatRoom createRoom(UserEntity user1, UserEntity user2, Post post) {
         // user1 >> 게시글 작성자
@@ -35,7 +36,7 @@ public class ChatService {
 
         ExchangePost exchangePost = (ExchangePost) post;
         ChatRoom chatRoom = new ChatRoom();
-        String roomName = user2.getNickName() + " (" + user2.getNickName() + ")";
+        String roomName = user2.getNickName() + " (" + user2.getId() + ")";
         chatRoom.setRoomName(roomName);
         chatRoom.setDate(formatDate(LocalDateTime.now()));
         chatRoom.setPostWriter(user1);
