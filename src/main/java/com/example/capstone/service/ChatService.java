@@ -1,10 +1,7 @@
 package com.example.capstone.service;
 
 import com.example.capstone.dto.ChatMessageDTO;
-import com.example.capstone.entity.ChatMessage;
-import com.example.capstone.entity.ChatRoom;
-import com.example.capstone.entity.ExchangePost;
-import com.example.capstone.entity.UserEntity;
+import com.example.capstone.entity.*;
 import com.example.capstone.repository.ChatMessageRepository;
 import com.example.capstone.repository.ChatRoomRepository;
 import com.example.capstone.repository.UserRepository;
@@ -32,10 +29,11 @@ public class ChatService {
 
     public ChatRoom findRoomById(Long roomId) { return chatRoomRepository.findChatRoomByRoomId(roomId); }
 
-    public ChatRoom createRoom(UserEntity user1, UserEntity user2, ExchangePost exchangePost) {
+    public ChatRoom createRoom(UserEntity user1, UserEntity user2, Post post) {
         // user1 >> 게시글 작성자
         // user2 >> 해당 게시글에 신청한 사람
 
+        ExchangePost exchangePost = (ExchangePost) post;
         ChatRoom chatRoom = new ChatRoom();
         String roomName = user2.getNickName() + " (" + user2.getNickName() + ")";
         chatRoom.setRoomName(roomName);

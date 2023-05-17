@@ -1,6 +1,7 @@
 package com.example.capstone.controller;
 
 import com.example.capstone.data.LoginResponse;
+import com.example.capstone.data.PostResponse;
 import com.example.capstone.data.ServerErrorResponse;
 import com.example.capstone.data.TokenResponse;
 import com.example.capstone.dto.ExchangePostDTO;
@@ -147,22 +148,13 @@ public class ExchangePostController {
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
-                responseJson.put("message", "유효하지 않은 토큰입니다.");
-
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             } else {
                 // Pid 이용하여 게시글 조회
                 Post post = postRepository.findByPid(postId);
 
                 if (post == null) {
-                    responseJson.put("message", "없거나 삭제된 게시글입니다.");
-
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(responseJson);
-
+                    return PostResponse.notExistPost("없거나 삭제된 게시글입니다.");
                 }
                 // 게시글 타입 체크
                 if (post.getPostType() != PostType.T) {
@@ -191,7 +183,6 @@ public class ExchangePostController {
 
                     } else { // 본인이 작성한 게시글인 경우
                         postService.delete(exchangePost); // 게시글 삭제
-
                         responseJson.put("message", "게시글을 성공적으로 삭제했습니다.");
 
                         return ResponseEntity.status(HttpStatus.OK)
@@ -202,11 +193,7 @@ public class ExchangePostController {
                 }
             }
         } catch (Exception e) {
-            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(responseJson);
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
 
@@ -230,11 +217,7 @@ public class ExchangePostController {
                 Post post = postRepository.findByPid(postId);
 
                 if (post == null) {
-                    responseJson.put("message", "없거나 삭제된 게시글입니다.");
-
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(responseJson);
+                    return PostResponse.notExistPost("없거나 삭제된 게시글입니다.");
                 }
                 // 게시글 타입 체크
                 if (post.getPostType() != PostType.T) {
