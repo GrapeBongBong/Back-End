@@ -114,18 +114,6 @@ public class ExchangePostController {
                 return ResponseEntity.status(HttpStatus.CREATED)
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(responseJson);
-
-                /*else {
-                    List<String> imageUrls = new ArrayList<>();
-                    imageUrls = postService.save(exchangePostDTO, imageFiles, userEntity); // 가져온 userEntity 를 해당 포스트 컬럼에 추가
-
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    JsonNode imageUrlList = objectMapper.convertValue(imageUrls, JsonNode.class);
-
-                    return ResponseEntity.status(HttpStatus.CREATED)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(imageUrlList);
-                }*/
             } else {
                 responseJson.put("message", "회원이 아닙니다.");
 
@@ -187,13 +175,20 @@ public class ExchangePostController {
                                 .body(responseJson);
 
                     } else { // 본인이 작성한 게시글인 경우
-                        postService.delete(exchangePost); // 게시글 삭제
-                        responseJson.put("message", "게시글을 성공적으로 삭제했습니다.");
+                        String message = postService.delete(exchangePost); // 게시글 삭제
+                        responseJson.put("message", message);
+                        HttpStatus httpStatus = null;
 
-                        return ResponseEntity.status(HttpStatus.OK)
+                        if (message.equals("S3 에 저장되어 있지 않은 이미지가 있습니다.")) {
+                            httpStatus = HttpStatus.NOT_FOUND;
+                        } else if (message.equals("게시글을 성공적으로 삭제했습니다.")) {
+                            httpStatus = HttpStatus.OK;
+                        }
+
+                        assert httpStatus != null;
+                        return ResponseEntity.status(httpStatus)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .body(responseJson);
-
                     }
                 }
             }

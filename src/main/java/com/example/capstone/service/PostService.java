@@ -7,6 +7,7 @@ import com.example.capstone.dto.AnonymousPostDTO;
 import com.example.capstone.dto.ExchangePostDTO;
 import com.example.capstone.dto.PostDTO;
 import com.example.capstone.entity.*;
+import com.example.capstone.repository.PostImageRepository;
 import com.example.capstone.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,7 @@ import static com.example.capstone.entity.ExchangePost.formatDate;
 @Slf4j
 public class PostService {
     private final PostRepository postRepository;
+    private final PostImageRepository postImageRepository;
     private final AmazonS3 amazonS3Client;
 
     @Value("${cloud.aws.s3.bucket}")
@@ -84,8 +86,26 @@ public class PostService {
         return imageUrls;
     }
 
-    public void delete(Post post) {
+    public String delete(Post post) {
+        // 해당 포스트에 이미지 있는지 확인
+        List<PostImage> postImages = postImageRepository.findPostImagesByPost(post);
+
+        if (postImages != null) { // 이미지가 있다면 S3 에서 삭제
+            for (PostImage postImage: postImages) {
+                String imageUrl = postImage.getFileUrl();
+                String imageFileName = imageUrl.substring(imageUrl.indexOf("images/"));
+                log.info("imageFileName {}", imageFileName);
+                boolean isObjectExist = amazonS3Client.doesObjectExist(bucket, imageFileName); // S3 에 해당 이미지 있는지 확인
+                if (isObjectExist) { // S3 에 해당 이미지가 저장되어 있는 경우
+                    amazonS3Client.deleteObject(bucket, imageFileName);
+                } else {
+                    return "S3 에 저장되어 있지 않은 이미지가 있습니다.";
+                }
+            }
+        }
         postRepository.delete(post);
+
+        return "게시글을 성공적으로 삭제했습니다.";
     }
 
     public void update(PostDTO postDTO, Post post) {
