@@ -1,5 +1,6 @@
 package com.example.capstone.controller;
 
+import com.example.capstone.data.PostResponse;
 import com.example.capstone.data.ServerErrorResponse;
 import com.example.capstone.data.TokenResponse;
 import com.example.capstone.dto.AnonymousPostDTO;
@@ -75,15 +76,17 @@ public class AnonymousPostController {
             if (loggedInUserEntity.isPresent()) {
                 userEntity = loggedInUserEntity.get();
 
-                // 이미지가 없는 경우
                 if (imageFiles == null) {
-                    postService.save(anonymousPostDTO, null, userEntity); // 가져온 userEntity 를 해당 포스트 컬럼에 추가
+                    postService.save(anonymousPostDTO, null, userEntity);
+                } else if (imageFiles.get(0).isEmpty()) {
+                    responseJson.put("message", "선택된 이미지가 없습니다.");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
                 } else {
+                    // 이미지에 대한 요청이 제대로 온 경우
                     postService.save(anonymousPostDTO, imageFiles, userEntity);
                 }
-
-                // 가져온 Uid 를 해당 포스트 컬럼에 추가
-                postService.save(anonymousPostDTO, imageFiles, userEntity);
 
                 responseJson.put("message", "익명커뮤니티에 게시물이 성공적으로 등록되었습니다.");
 
@@ -124,12 +127,7 @@ public class AnonymousPostController {
                 Post post = postRepository.findByPid(postId);
 
                 if (post == null) {
-                    responseJson.put("message", "없거나 삭제된 게시글입니다.");
-
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(responseJson);
-
+                    return PostResponse.notExistPost("없거나 삭제된 게시글입니다.");
                 }
                 // 게시글 타입 체크
                 if (post.getPostType() != PostType.A) {
@@ -157,11 +155,18 @@ public class AnonymousPostController {
                                 .body(responseJson);
 
                     } else { // 본인이 작성한 게시글인 경우
-                        postService.delete(anonymousPost); // 게시글 삭제
+                        String message = postService.delete(anonymousPost); // 게시글 삭제
+                        responseJson.put("message", message);
+                        HttpStatus httpStatus = null;
 
-                        responseJson.put("message", "게시글을 성공적으로 삭제했습니다.");
+                        if (message.equals("S3 에 저장되어 있지 않은 이미지가 있습니다.")) {
+                            httpStatus = HttpStatus.NOT_FOUND;
+                        } else if (message.equals("게시글을 성공적으로 삭제했습니다.")) {
+                            httpStatus = HttpStatus.OK;
+                        }
 
-                        return ResponseEntity.status(HttpStatus.OK)
+                        assert httpStatus != null;
+                        return ResponseEntity.status(httpStatus)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .body(responseJson);
                     }
