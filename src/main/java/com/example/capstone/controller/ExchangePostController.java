@@ -97,10 +97,15 @@ public class ExchangePostController {
             if (loggedInUserEntity.isPresent()) {
                 userEntity = loggedInUserEntity.get();
 
-                // 이미지가 없는 경우
                 if (imageFiles == null) {
-                    postService.save(exchangePostDTO, null, userEntity); // 가져온 userEntity 를 해당 포스트 컬럼에 추가
+                    postService.save(exchangePostDTO, null, userEntity);
+                } else if (imageFiles.get(0).isEmpty()) {
+                    responseJson.put("message", "선택된 이미지가 없습니다.");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
                 } else {
+                    // 이미지에 대한 요청이 제대로 온 경우
                     postService.save(exchangePostDTO, imageFiles, userEntity);
                 }
 
