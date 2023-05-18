@@ -24,6 +24,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -34,6 +35,7 @@ import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
+@Validated
 @RequestMapping("/anonymous")
 public class AnonymousPostController {
 
@@ -45,7 +47,7 @@ public class AnonymousPostController {
 
     // 게시물 등록 API
     @PostMapping(value = "/post", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity<?> createPost(@RequestPart AnonymousPostDTO anonymousPostDTO,
+    public ResponseEntity<?> createPost(@Valid @RequestPart AnonymousPostDTO anonymousPostDTO,
                                         @RequestPart(value = "images", required = false) List<MultipartFile> imageFiles, BindingResult bindingResult, HttpServletRequest request) {
         responseJson = JsonNodeFactory.instance.objectNode();
 
