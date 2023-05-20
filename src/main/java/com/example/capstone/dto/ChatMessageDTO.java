@@ -22,13 +22,4 @@ public class ChatMessageDTO {
     private Long roomId; // 메시지를 보낼 채팅방 id
     private String senderId; // 보내는 사람의 아이디
     private String message;
-
-    public static ChatMessageDTO toChatMessageDTO(ChatMessage chatMessage) {
-        ChatMessageDTO chatMessageDTO = new ChatMessageDTO();
-        chatMessageDTO.setRoomId(chatMessage.getChatRoom().getRoomId());
-        chatMessageDTO.setSenderId(chatMessage.getSender().getId());
-        chatMessageDTO.setMessage(chatMessage.getMessage());
-
-        return chatMessageDTO;
-    }
 }

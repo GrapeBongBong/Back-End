@@ -1,6 +1,7 @@
 package com.example.capstone.handler;
 
 import com.example.capstone.dto.ChatMessageDTO;
+import com.example.capstone.dto.ChatMessageResponseDTO;
 import com.example.capstone.entity.ChatMessage;
 import com.example.capstone.entity.ChatRoom;
 import com.example.capstone.repository.ChatMessageRepository;
@@ -11,7 +12,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -29,7 +29,6 @@ public class ChatHandler extends TextWebSocketHandler { // Client 가 Send 할 �
     private final ChatService chatService;
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomRepository chatRoomRepository;
-//    private final SimpMessagingTemplate messagingTemplate;
     private ObjectNode responseJson;
 
     // 각 채팅방마다 세션 관리
@@ -76,18 +75,17 @@ public class ChatHandler extends TextWebSocketHandler { // Client 가 Send 할 �
             if (roomSessions.isEmpty()) {
                 // 해당 채팅방에 대해 DB 에 저장된 이전 채팅 메시지들 조회
                 List<ChatMessage> chatMessageList = chatMessageRepository.getChatMessagesByChatRoom(chatRoom);
-                List<ChatMessageDTO> chatMessageDTOList = new ArrayList<>();
+                List<ChatMessageResponseDTO> chatMessageDTOList = new ArrayList<>();
 
                 for (ChatMessage chatMessage: chatMessageList) {
-                    ChatMessageDTO chatMessageDTO = ChatMessageDTO.toChatMessageDTO(chatMessage);
-                    chatMessageDTOList.add(chatMessageDTO);
-                    log.info("chatMessageDTO: {}", chatMessageDTO);
+                    ChatMessageResponseDTO chatMessageResponseDTO = ChatMessageResponseDTO.toChatMessageResponseDTO(chatMessage);
+                    chatMessageDTOList.add(chatMessageResponseDTO);
+                    log.info("chatMessageDTO: {}", chatMessageResponseDTO);
                 }
 
                 JsonNode chatMessages = objectMapper.convertValue(chatMessageDTOList, JsonNode.class);
                 log.info("chatMessages: {}", chatMessages);
 
-//                messagingTemplate.convertAndSend("/ws/chat/" + chatRoomId, chatMessages);
                 session.sendMessage(new TextMessage(objectMapper.writeValueAsString(chatMessages)));
                 /*for (WebSocketSession roomSession: roomSessions) {
                     roomSession.sendMessage(new TextMessage(objectMapper.writeValueAsString(chatMessages)));
