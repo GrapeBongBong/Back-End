@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -28,6 +29,7 @@ public class ChatHandler extends TextWebSocketHandler { // Client 가 Send 할 �
     private final ChatService chatService;
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomRepository chatRoomRepository;
+//    private final SimpMessagingTemplate messagingTemplate;
     private ObjectNode responseJson;
 
     // 각 채팅방마다 세션 관리
@@ -85,9 +87,11 @@ public class ChatHandler extends TextWebSocketHandler { // Client 가 Send 할 �
                 JsonNode chatMessages = objectMapper.convertValue(chatMessageDTOList, JsonNode.class);
                 log.info("chatMessages: {}", chatMessages);
 
-                for (WebSocketSession roomSession: roomSessions) {
+//                messagingTemplate.convertAndSend("/ws/chat/" + chatRoomId, chatMessages);
+                session.sendMessage(new TextMessage(objectMapper.writeValueAsString(chatMessages)));
+                /*for (WebSocketSession roomSession: roomSessions) {
                     roomSession.sendMessage(new TextMessage(objectMapper.writeValueAsString(chatMessages)));
-                }
+                }*/
             }
 
             // 현재 세션을 해당 채팅방의 세션 리스트에 추가

@@ -68,16 +68,31 @@ public class ChatController {
                     return PostResponse.notExistPost("없거나 삭제된 게시글입니다.");
                 }
 
-                // 채팅방 생성
-                ChatRoom chatRoom = chatService.createRoom(post.getUser(), user.get(), post);
+                // 채팅방을 생성하기 전에 채팅방이 존재하는지 먼저 확인
+                // exchangePostId 와 applicantId 에 대한 신청자 uid 까지 똑같으면 같은 채팅방
+                Long exchangePostId = chatDTO.getExchangePostId();
+                String applicantId = chatDTO.getApplicantId();
+                ChatRoom chatRoom = chatService.isExistChatRoom(exchangePostId, applicantId);
+                if (chatRoom != null) { // 이미 채팅방이 존재하면
+                    responseJson.put("message", "이미 채팅방이 존재합니다.");
+                    responseJson.put("roomId", chatRoom.getRoomId());
+                    responseJson.put("roomName", chatRoom.getRoomName());
 
-                responseJson.put("roomId", chatRoom.getRoomId());
-                responseJson.put("roomName", chatRoom.getRoomName());
+                    return ResponseEntity.status(HttpStatus.CONFLICT)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
 
-                return ResponseEntity.status(HttpStatus.OK)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                } else { // 채팅방이 없으면 새로 생성
+                    // 채팅방 생성
+                    ChatRoom newChatRoom = chatService.createRoom(post.getUser(), user.get(), post);
 
+                    responseJson.put("roomId", newChatRoom.getRoomId());
+                    responseJson.put("roomName", newChatRoom.getRoomName());
+
+                    return ResponseEntity.status(HttpStatus.OK)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                }
             } else { // 회원가입된 사용자가 아닐 경우
                 responseJson.put("message", "가입된 사용자가 아닙니다.");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)

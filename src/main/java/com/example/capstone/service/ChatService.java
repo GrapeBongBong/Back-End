@@ -48,6 +48,17 @@ public class ChatService {
         return chatRoom;
     }
 
+    public ChatRoom isExistChatRoom(Long exchangePostId, String applicantId) {
+        // exchangePostId 에 해당하는 게시글 찾기
+        ExchangePost exchangePost = (ExchangePost) postRepository.findByPid(exchangePostId);
+        Optional<UserEntity> applicant = userRepository.findById(applicantId);
+        if (applicant.isPresent()) {
+            return chatRoomRepository.findChatRoomByExchangePostAndApplicant(exchangePost, applicant.get());
+        } else {
+            return null;
+        }
+    }
+
     public void saveMessage(ChatMessageDTO chatMessageDTO, Long chatRoomId) {
         String senderId = chatMessageDTO.getSenderId();
         Optional<UserEntity> loggedInUser = userRepository.findById(senderId);
