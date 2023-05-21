@@ -45,13 +45,14 @@ public class ChatHandler extends TextWebSocketHandler { // Client 가 Send 할 �
 
         Long chatRoomId = extractChatRoomIdFromSession(session);
 
-        // 보내온 메시지를 DB 에 저장
-        chatService.saveMessage(chatMessageDTO, chatRoomId);
+        // 보내온 메시지를 DB 에 저장 후 해당 메시지 아이디 가져오기
+        Long chatMessageId = chatService.saveMessage(chatMessageDTO, chatRoomId);
 
         // 해당 채팅방의 세션들에게 메시지 전송
         List<WebSocketSession> roomSessions = chatSessions.getOrDefault(chatRoomId, new ArrayList<>());
         for (WebSocketSession roomSession: roomSessions) {
-            roomSession.sendMessage(new TextMessage(objectMapper.writeValueAsString(chatMessageDTO)));
+            ChatMessageResponseDTO chatMessageResponseDTO = ChatMessageResponseDTO.addChatMessageId(chatMessageDTO, chatMessageId);
+            roomSession.sendMessage(new TextMessage(objectMapper.writeValueAsString(chatMessageResponseDTO)));
         }
     }
 

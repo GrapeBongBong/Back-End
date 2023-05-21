@@ -59,7 +59,7 @@ public class ChatService {
         }
     }
 
-    public void saveMessage(ChatMessageDTO chatMessageDTO, Long chatRoomId) {
+    public Long saveMessage(ChatMessageDTO chatMessageDTO, Long chatRoomId) { // 저장 후 해당 채팅 메시지 아이디 리턴
         String senderId = chatMessageDTO.getSenderId();
         Optional<UserEntity> loggedInUser = userRepository.findById(senderId);
         ChatRoom chatRoom = chatRoomRepository.findChatRoomByRoomId(chatRoomId);
@@ -76,6 +76,7 @@ public class ChatService {
         chatMessage.setDate(formatDate(LocalDateTime.now()));
 
         chatMessageRepository.save(chatMessage);
+        return chatMessage.getId();
     }
 
     public String formatDate(LocalDateTime localDateTime) {

@@ -23,4 +23,14 @@ public class ChatMessageResponseDTO {
 
         return chatMessageResponseDTO;
     }
+
+    public static ChatMessageResponseDTO addChatMessageId(ChatMessageDTO chatMessageDTO, Long chatMessageId) {
+        ChatMessageResponseDTO chatMessageResponseDTO = new ChatMessageResponseDTO();
+        chatMessageResponseDTO.setChatMessageId(chatMessageId);
+        chatMessageResponseDTO.setRoomId(chatMessageDTO.getRoomId());
+        chatMessageResponseDTO.setSenderId(chatMessageDTO.getSenderId());
+        chatMessageResponseDTO.setMessage(chatMessageDTO.getMessage());
+
+        return chatMessageResponseDTO;
+    }
 }
