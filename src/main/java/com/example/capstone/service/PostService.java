@@ -7,6 +7,7 @@ import com.example.capstone.dto.AnonymousPostDTO;
 import com.example.capstone.dto.ExchangePostDTO;
 import com.example.capstone.dto.PostDTO;
 import com.example.capstone.entity.*;
+import com.example.capstone.repository.ExchangePostRepository;
 import com.example.capstone.repository.PostImageRepository;
 import com.example.capstone.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,12 +26,27 @@ import static com.example.capstone.entity.ExchangePost.formatDate;
 @RequiredArgsConstructor
 @Slf4j
 public class PostService {
+    private final ExchangePostRepository exchangePostRepository;
     private final PostRepository postRepository;
     private final PostImageRepository postImageRepository;
     private final AmazonS3 amazonS3Client;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
+
+    public List<ExchangePost> searchPostByCategory(String giveCate, String takeCate) {
+        List<ExchangePost> exchangePostList = new ArrayList<>();
+
+        if (giveCate == null) { // takeCate 만 선택한 경우
+            exchangePostList = exchangePostRepository.getExchangePostsByTakeCate(takeCate);
+        } else if (takeCate == null) { // giveCate 만 선택한 경우
+            exchangePostList = exchangePostRepository.getExchangePostsByGiveCate(giveCate);
+        } else {
+            exchangePostList = exchangePostRepository.getExchangePostsByGiveCateAndTakeCate(giveCate, takeCate);
+        }
+
+        return exchangePostList;
+    }
 
     public void save(PostDTO postDTO, List<MultipartFile> imageFiles, UserEntity userEntity) throws IOException {
 

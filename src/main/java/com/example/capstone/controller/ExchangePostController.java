@@ -6,11 +6,13 @@ import com.example.capstone.data.ServerErrorResponse;
 import com.example.capstone.data.TokenResponse;
 import com.example.capstone.dto.ExchangePostDTO;
 import com.example.capstone.dto.PageResponse;
+import com.example.capstone.dto.SearchDTO;
 import com.example.capstone.entity.ExchangePost;
 import com.example.capstone.entity.Post;
 import com.example.capstone.entity.PostType;
 import com.example.capstone.entity.UserEntity;
 import com.example.capstone.jwt.TokenProvider;
+import com.example.capstone.repository.ExchangePostRepository;
 import com.example.capstone.repository.PostRepository;
 import com.example.capstone.repository.UserRepository;
 import com.example.capstone.service.PostService;
@@ -317,6 +319,7 @@ public class ExchangePostController {
             return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
+
     // 게시글 상세 조회 API
     /*@Transactional
     @GetMapping("/detail/{postId}")
@@ -365,4 +368,44 @@ public class ExchangePostController {
                     .body(responseJson);
         }
     }*/
+
+
+    // 게시물 카테고리별 검색 API
+    @Transactional
+    @PostMapping("/search")
+    public ResponseEntity<?> searchPost(@RequestBody SearchDTO searchDTO, HttpServletRequest request) {
+        try {
+            // 토큰 값 추출
+            String token = request.getHeader("Authorization");
+            token = token.replaceAll("Bearer ", "");
+
+            // 토큰 검증
+            if (!tokenProvider.validateToken(token)) {
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
+            } else {
+                String giveCate = searchDTO.getGiveCate();
+                String takeCate = searchDTO.getTakeCate();
+
+                if (giveCate == null && takeCate == null) {
+                    responseJson.put("message", "카테고리가 선택되지 않았습니다.");
+                    return ResponseEntity.status(HttpStatus.CONFLICT)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                } else {
+                    List<ExchangePost> exchangePostList = postService.searchPostByCategory(giveCate, takeCate);
+                    List<ExchangePostDTO> exchangePostDTOList = ExchangePostDTO.toExchangePostDTOList(exchangePostList);
+
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    JsonNode exchangePosts = objectMapper.convertValue(exchangePostDTOList, JsonNode.class);
+
+                    return ResponseEntity.status(HttpStatus.OK)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(exchangePosts);
+                }
+            }
+
+        } catch (Exception e) {
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
+        }
+    }
 }
