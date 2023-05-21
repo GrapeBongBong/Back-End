@@ -73,7 +73,7 @@ public class ChatHandler extends TextWebSocketHandler { // Client 가 Send 할 �
             List<WebSocketSession> roomSessions = chatSessions.getOrDefault(chatRoomId, new ArrayList<>());
 
             // 해당 채팅방에 대한 세션에 최초 접속 시에만 DB 에서 메시지 조회해서 클라이언트로 전달
-            if (roomSessions.isEmpty()) {
+//            if (roomSessions.isEmpty()) {
                 // 해당 채팅방에 대해 DB 에 저장된 이전 채팅 메시지들 조회
                 List<ChatMessage> chatMessageList = chatMessageRepository.getChatMessagesByChatRoom(chatRoom);
                 List<ChatMessageResponseDTO> chatMessageDTOList = new ArrayList<>();
@@ -91,7 +91,7 @@ public class ChatHandler extends TextWebSocketHandler { // Client 가 Send 할 �
                 /*for (WebSocketSession roomSession: roomSessions) {
                     roomSession.sendMessage(new TextMessage(objectMapper.writeValueAsString(chatMessages)));
                 }*/
-            }
+//            }
 
             // 현재 세션을 해당 채팅방의 세션 리스트에 추가
             roomSessions.add(session);
