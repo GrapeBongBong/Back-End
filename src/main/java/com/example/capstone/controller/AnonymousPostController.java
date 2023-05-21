@@ -267,12 +267,9 @@ public class AnonymousPostController {
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode anonymousPosts = objectMapper.convertValue(anonymousPostDTOList, JsonNode.class);
 
-                responseJson = JsonNodeFactory.instance.objectNode();
-                responseJson.set("posts", anonymousPosts);
-
                 return ResponseEntity.status(HttpStatus.OK)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                        .body(anonymousPosts);
             }
 
         } catch (Exception e) {

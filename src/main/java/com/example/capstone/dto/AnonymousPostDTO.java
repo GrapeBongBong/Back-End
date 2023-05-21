@@ -27,13 +27,17 @@ public class AnonymousPostDTO extends PostDTO {
 
     public static AnonymousPostDTO toAnonymousPostDTO(AnonymousPost anonymousPost) {
         AnonymousPostDTO anonymousPostDTO = new AnonymousPostDTO();
-        anonymousPostDTO.setWriterNick(anonymousPost.getUser().getNickName()); // 작성자 닉네임
-        anonymousPostDTO.setWriterId(anonymousPost.getUser().getId()); // 작성자 아이디
+        anonymousPostDTO.setPid(anonymousPost.getPid());
         anonymousPostDTO.setTitle(anonymousPost.getTitle());
         anonymousPostDTO.setContent(anonymousPost.getContent());
+        anonymousPostDTO.setDate(anonymousPost.getDate());
+        anonymousPostDTO.setWriterNick(anonymousPost.getUser().getNickName()); // 작성자 닉네임
+        anonymousPostDTO.setWriterId(anonymousPost.getUser().getId()); // 작성자 아이디
+        anonymousPostDTO.setUid(anonymousPost.getUser().getUid());
         anonymousPostDTO.setPostType(PostType.A);
 
         // 이미지 관련 로직 추가
+        anonymousPostDTO.setImages(anonymousPost.getPostImages());
 
         return anonymousPostDTO;
     }
