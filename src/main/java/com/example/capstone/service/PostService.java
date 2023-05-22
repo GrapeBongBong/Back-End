@@ -37,12 +37,12 @@ public class PostService {
     public List<ExchangePost> searchPostByCategory(String giveCate, String takeCate) {
         List<ExchangePost> exchangePostList = new ArrayList<>();
 
-        if (giveCate == null && takeCate == null) { // giveCate, takeCate 모두 null 이면 전체 게시물 조회
+        if (giveCate.equals("All") && takeCate.equals("All")) { // giveCate, takeCate 모두 null 이면 전체 게시물 조회
             exchangePostList = exchangePostRepository.getAllByPostType(PostType.T);
         } else {
-            if (giveCate == null) { // takeCate 만 선택한 경우
+            if (giveCate.equals("All")) { // takeCate 만 선택한 경우
                 exchangePostList = exchangePostRepository.getExchangePostsByTakeCate(takeCate);
-            } else if (takeCate == null) { // giveCate 만 선택한 경우
+            } else if (takeCate.equals("All")) { // giveCate 만 선택한 경우
                 exchangePostList = exchangePostRepository.getExchangePostsByGiveCate(giveCate);
             } else {
                 exchangePostList = exchangePostRepository.getExchangePostsByGiveCateAndTakeCate(giveCate, takeCate);
