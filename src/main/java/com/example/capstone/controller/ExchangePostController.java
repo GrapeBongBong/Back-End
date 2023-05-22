@@ -386,22 +386,15 @@ public class ExchangePostController {
                 String giveCate = searchDTO.getGiveCate();
                 String takeCate = searchDTO.getTakeCate();
 
-                if (giveCate == null && takeCate == null) {
-                    responseJson.put("message", "카테고리가 선택되지 않았습니다.");
-                    return ResponseEntity.status(HttpStatus.CONFLICT)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(responseJson);
-                } else {
-                    List<ExchangePost> exchangePostList = postService.searchPostByCategory(giveCate, takeCate);
-                    List<ExchangePostDTO> exchangePostDTOList = ExchangePostDTO.toExchangePostDTOList(exchangePostList);
+                List<ExchangePost> exchangePostList = postService.searchPostByCategory(giveCate, takeCate);
+                List<ExchangePostDTO> exchangePostDTOList = ExchangePostDTO.toExchangePostDTOList(exchangePostList);
 
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    JsonNode exchangePosts = objectMapper.convertValue(exchangePostDTOList, JsonNode.class);
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode exchangePosts = objectMapper.convertValue(exchangePostDTOList, JsonNode.class);
 
-                    return ResponseEntity.status(HttpStatus.OK)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(exchangePosts);
-                }
+                return ResponseEntity.status(HttpStatus.OK)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(exchangePosts);
             }
 
         } catch (Exception e) {

@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +34,7 @@ import javax.validation.Valid;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @Validated
@@ -127,6 +129,7 @@ public class AnonymousPostController {
             } else {
                 // Pid 이용하여 게시글 조회
                 Post post = postRepository.findByPid(postId);
+                log.info("Anonymous post {}", post);
 
                 if (post == null) {
                     return PostResponse.notExistPost("없거나 삭제된 게시글입니다.");
