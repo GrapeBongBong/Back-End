@@ -1,10 +1,12 @@
 package com.example.capstone.dto;
 
 import com.example.capstone.entity.ChatRoom;
+import com.example.capstone.entity.UserEntity;
 import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Data
 @Getter
@@ -33,6 +35,33 @@ public class ChatRoomDTO {
         ChatRoomDTO chatRoomDTO = new ChatRoomDTO();
         chatRoomDTO.setRoomId(chatRoom.getRoomId());
         chatRoomDTO.setRoomName(chatRoom.getRoomName());
+        chatRoomDTO.setDate(chatRoom.getDate());
+
+        return chatRoomDTO;
+    }
+
+    public static List<ChatRoomDTO> toChatRoomDTOListByUser(List<ChatRoom> chatRooms, UserEntity user) {
+        List<ChatRoomDTO> chatRoomDTOList = new ArrayList<>();
+
+        for (ChatRoom chatRoom: chatRooms) {
+            ChatRoomDTO chatRoomDTO = ChatRoomDTO.toChatRoomDTOByUser(chatRoom, user);
+            chatRoomDTOList.add(chatRoomDTO);
+        }
+
+        return chatRoomDTOList;
+    }
+
+    private static ChatRoomDTO toChatRoomDTOByUser(ChatRoom chatRoom, UserEntity user) {
+        ChatRoomDTO chatRoomDTO = new ChatRoomDTO();
+        chatRoomDTO.setRoomId(chatRoom.getRoomId());
+        // user 가 신청자라면, 채팅방 이름 = 게시글 작성자 닉네임(아이디)
+        if (Objects.equals(user.getUid(), chatRoom.getApplicant().getUid())) {
+            UserEntity postWriter = chatRoom.getPostWriter();
+            chatRoomDTO.setRoomName(postWriter.getNickName() + " (" + postWriter.getId() + ")");
+        } else if (Objects.equals(user.getUid(), chatRoom.getPostWriter().getUid())) {
+            // user 가 게시글 작성자라면, 채팅방 이름 = 신청자 닉네임(아이디) >> 즉, DB 에 있는 roomName 으로 설정
+            chatRoomDTO.setRoomName(chatRoom.getRoomName());
+        }
         chatRoomDTO.setDate(chatRoom.getDate());
 
         return chatRoomDTO;
