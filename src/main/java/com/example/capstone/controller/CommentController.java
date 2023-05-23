@@ -237,7 +237,6 @@ public class CommentController {
                 return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             }
 
-
             List<CommentDTO> commentDTOs = commentService.getCommentsByPostId(postId);
 
             // ObjectMapper를 사용하여 pretty-printing된 JSON 문자열 생성

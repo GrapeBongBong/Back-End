@@ -62,6 +62,7 @@ public class PostService {
         }
 
         if (imageFiles != null) { // 이미지 첨부한 경우
+            log.info("PostService.save");
             List<String> imageUrls = new ArrayList<>();
             imageUrls = saveImages(imageFiles);
             log.info("imageUrls: {}", imageUrls);
