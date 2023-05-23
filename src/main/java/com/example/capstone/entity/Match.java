@@ -19,7 +19,13 @@ public class Match {
     @JoinColumn(name = "exchange_post_id")
     private ExchangePost exchangePost;
 
-    @ElementCollection
-    private List<String> matchedUsers;
+    @JoinColumn(name = "chat_room_id")
+    private Long chatRoomId;
+
+    @JoinColumn(name = "writer_id")
+    private Long writerId;
+
+    @JoinColumn(name = "applicant_id")
+    private Long applicantId;
 
 }

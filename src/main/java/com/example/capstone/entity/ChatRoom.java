@@ -46,4 +46,19 @@ public class ChatRoom {
     @Column(name = "date", nullable = false)
     private String date;
 
+    public Long getWriterId() {
+        if (postWriter != null) {
+            return postWriter.getUid();
+        } else {
+            return null;
+        }
+    }
+
+    public Long getApplicantId() {
+        if (applicant != null) {
+            return applicant.getUid();
+        } else {
+            return null;
+        }
+    }
 }
