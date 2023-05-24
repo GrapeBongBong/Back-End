@@ -12,6 +12,8 @@ import lombok.Setter;
 public class UserProfileDTO {
 
     private String nickName;
-    private String address;
+    private String email;
+    private String phoneNumber;
+    private String password;
 
 }

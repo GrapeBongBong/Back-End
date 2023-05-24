@@ -8,6 +8,7 @@ import com.example.capstone.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,6 +24,7 @@ public class UserProfileService {
 
     private final UserRepository userRepository;
     private final AmazonS3 amazonS3Client;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
@@ -40,13 +42,20 @@ public class UserProfileService {
         if (userProfileDTO.getNickName() != null) {
             user.setNickName(userProfileDTO.getNickName());
         }
-        if (userProfileDTO.getAddress() != null) {
-            user.setAddress(userProfileDTO.getAddress());
+        if (userProfileDTO.getEmail() != null) {
+            user.setEmail(userProfileDTO.getEmail());
+        }
+        if (userProfileDTO.getPhoneNumber() != null) {
+            user.setPhone_num(userProfileDTO.getPhoneNumber());
+        }
+        if (userProfileDTO.getPassword() != null) {
+            String hashedPassword = passwordEncoder.encode(userProfileDTO.getPassword());
+            user.setPassword(hashedPassword);
         }
 
         UserEntity updatedUser = userRepository.save(user);
 
-        return new UserProfileDTO(updatedUser.getNickName(), updatedUser.getAddress());
+        return new UserProfileDTO(updatedUser.getNickName(), updatedUser.getEmail(), updatedUser.getPhone_num(), updatedUser.getPassword());
     }
 
     public String uploadProfileImage(MultipartFile multipartFile, UserEntity user) throws IOException {

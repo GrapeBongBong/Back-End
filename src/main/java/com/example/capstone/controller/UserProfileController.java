@@ -52,6 +52,7 @@ public class UserProfileController {
 
                 String loggedInUserId = userDetails.getUsername(); // UserDetails 객체에서 사용자 아이디를 가져옴
                 System.out.println(loggedInUserId);
+
                 // 유저 프로필 수정
                 UserProfileDTO updatedUserProfile = userProfileService.updateUserProfile(loggedInUserId, userProfileDTO);
 
