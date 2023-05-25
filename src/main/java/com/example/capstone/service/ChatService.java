@@ -36,7 +36,7 @@ public class ChatService {
 
         ExchangePost exchangePost = (ExchangePost) post;
         ChatRoom chatRoom = new ChatRoom();
-        String roomName = user2.getNickName() + " (" + user2.getId() + ")";
+        String roomName = exchangePost.getTitle() + " (" + user2.getNickName() + ")";
         chatRoom.setRoomName(roomName);
         chatRoom.setDate(formatDate(LocalDateTime.now()));
         chatRoom.setPostWriter(user1);

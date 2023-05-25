@@ -136,5 +136,4 @@ public class ChatController {
             return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
-
 }

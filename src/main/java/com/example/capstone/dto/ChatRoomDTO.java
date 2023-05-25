@@ -1,6 +1,8 @@
 package com.example.capstone.dto;
 
 import com.example.capstone.entity.ChatRoom;
+import com.example.capstone.entity.ExchangePost;
+import com.example.capstone.entity.Post;
 import com.example.capstone.entity.UserEntity;
 import lombok.*;
 
@@ -54,13 +56,16 @@ public class ChatRoomDTO {
 
     private static ChatRoomDTO toChatRoomDTOByUser(ChatRoom chatRoom, UserEntity user) {
         ChatRoomDTO chatRoomDTO = new ChatRoomDTO();
+        ExchangePost exchangePost = chatRoom.getExchangePost();
+        chatRoomDTO.setPostWriterUID(exchangePost.getUser().getUid());
+        chatRoomDTO.setPid(exchangePost.getPid());
         chatRoomDTO.setRoomId(chatRoom.getRoomId());
-        // user 가 신청자라면, 채팅방 이름 = 게시글 작성자 닉네임(아이디)
+        // user 가 신청자라면, 채팅방 이름 = 게시글 제목 (게시글 작성자 닉네임)
         if (Objects.equals(user.getUid(), chatRoom.getApplicant().getUid())) {
             UserEntity postWriter = chatRoom.getPostWriter();
-            chatRoomDTO.setRoomName(postWriter.getNickName() + " (" + postWriter.getId() + ")");
+            chatRoomDTO.setRoomName(chatRoom.getExchangePost().getTitle() + " (" + postWriter.getNickName() + ")");
         } else if (Objects.equals(user.getUid(), chatRoom.getPostWriter().getUid())) {
-            // user 가 게시글 작성자라면, 채팅방 이름 = 신청자 닉네임(아이디) >> 즉, DB 에 있는 roomName 으로 설정
+            // user 가 게시글 작성자라면, 채팅방 이름 = 게시글 제목 (신청자 닉네임) >> 즉, DB 에 저장되어 있는 채팅방 이름 그대로
             chatRoomDTO.setRoomName(chatRoom.getRoomName());
         }
         chatRoomDTO.setDate(chatRoom.getDate());
