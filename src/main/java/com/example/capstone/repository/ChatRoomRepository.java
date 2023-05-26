@@ -15,6 +15,9 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     // 채팅방 조회 (게시글 기준)
     List<ChatRoom> findChatRoomsByExchangePost(ExchangePost exchangePost);
 
+    // 채팅방이 있는지 체크 (게시글 기준)
+    boolean existsChatRoomByExchangePost(ExchangePost exchangePost);
+
     // 재능교환 게시글 아이디와 신청자 아이디로 해당 채팅룸 찾기
     ChatRoom findChatRoomByExchangePostAndApplicant(ExchangePost exchangePost, UserEntity applicant);
 
@@ -23,4 +26,7 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
     // 채팅방 조회
     Optional<ChatRoom> findRoomIdByExchangePost(ExchangePost exchangePost);
+
+    // 채팅방 삭제
+    void deleteChatRoomsByExchangePost(ExchangePost exchangePost);
 }

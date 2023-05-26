@@ -7,6 +7,7 @@ import com.example.capstone.dto.AnonymousPostDTO;
 import com.example.capstone.dto.ExchangePostDTO;
 import com.example.capstone.dto.PostDTO;
 import com.example.capstone.entity.*;
+import com.example.capstone.repository.ChatRoomRepository;
 import com.example.capstone.repository.ExchangePostRepository;
 import com.example.capstone.repository.PostImageRepository;
 import com.example.capstone.repository.PostRepository;
@@ -29,6 +30,7 @@ public class PostService {
     private final ExchangePostRepository exchangePostRepository;
     private final PostRepository postRepository;
     private final PostImageRepository postImageRepository;
+    private final ChatRoomRepository chatRoomRepository;
     private final AmazonS3 amazonS3Client;
 
     @Value("${cloud.aws.s3.bucket}")
@@ -124,6 +126,17 @@ public class PostService {
                 }
             }
         }
+
+        // 재능교환 게시글인 경우에만 채팅방이 존재하므로
+        if (post.getPostType() == PostType.T) {
+            // 채팅방이 있는 게시글이면 채팅방도 삭제
+            ExchangePost exchangePost = (ExchangePost) post;
+            boolean isExist = chatRoomRepository.existsChatRoomByExchangePost(exchangePost);
+            if (isExist) { // 채팅방 삭제 (삭제하려는 게시글과 관련된 모든 채팅방 삭제)
+                chatRoomRepository.deleteChatRoomsByExchangePost(exchangePost);
+            }
+        }
+
         postRepository.delete(post);
 
         return "게시글을 성공적으로 삭제했습니다.";
