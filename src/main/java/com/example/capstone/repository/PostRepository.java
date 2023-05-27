@@ -15,11 +15,11 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     // post 상세조회
     Post findByPid(Long pid);
 
-    // ExchangePost 타입의 Post 객체만 조회
-    List<?> findByPostType(PostType postType);
+    // PostType 구분해서 조회
+    List<Post> findByPostType(PostType postType);
 
     Page<ExchangePost> findByPostType(PostType postType, Pageable pageable);
 
     @EntityGraph(attributePaths = "user")
-    List<?> findByUserIdAndPostType(String user_id, PostType postType);
+    List<Post> findByUserIdAndPostType(String user_id, PostType postType);
 }
