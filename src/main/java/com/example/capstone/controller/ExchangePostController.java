@@ -406,6 +406,15 @@ public class ExchangePostController {
                             .body(responseJson);
                 }
 
+                // 이미 좋아요를 한 게시글인지 체크
+                boolean isLiked = likePostService.isLiked(user.get(), post);
+                if (isLiked) {
+                    responseJson.put("message", "이미 좋아요를 한 게시글입니다.");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                }
+
                 likePostService.likePostByUser(user.get(), post);
 
                 responseJson.put("message", "게시물에 좋아요를 눌렀습니다.");
