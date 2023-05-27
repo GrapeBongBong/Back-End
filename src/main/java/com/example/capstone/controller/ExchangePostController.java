@@ -406,18 +406,19 @@ public class ExchangePostController {
                             .body(responseJson);
                 }
 
-<<<<<<< HEAD
                 if (post.getPostType() != PostType.T) {
                     responseJson.put("message", "재능 거래 게시글이 아닙니다.");
 
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST) // 400
-=======
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                }
+
                 // 이미 좋아요를 한 게시글인지 체크
                 boolean isLiked = likePostService.isLiked(user.get(), post);
                 if (isLiked) {
                     responseJson.put("message", "이미 좋아요를 한 게시글입니다.");
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
->>>>>>> feature/post_like_user
                             .contentType(MediaType.APPLICATION_JSON)
                             .body(responseJson);
                 }
