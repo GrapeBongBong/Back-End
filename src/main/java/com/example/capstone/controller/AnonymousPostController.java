@@ -11,6 +11,7 @@ import com.example.capstone.entity.UserEntity;
 import com.example.capstone.jwt.TokenProvider;
 import com.example.capstone.repository.PostRepository;
 import com.example.capstone.repository.UserRepository;
+import com.example.capstone.service.LikePostService;
 import com.example.capstone.service.PostService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,6 +46,7 @@ public class AnonymousPostController {
     private final PostRepository postRepository;
     private final TokenProvider tokenProvider;
     private final PostService postService;
+    private final LikePostService likePostService;
     private ObjectNode responseJson;
 
     // 게시물 등록 API
@@ -295,6 +297,16 @@ public class AnonymousPostController {
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(responseJson);
             } else {
+                Optional<UserEntity> user = TokenResponse.getLoggedInUser(tokenProvider, token, userRepository);
+
+                if (user.isEmpty()) {
+                    responseJson.put("message", "가입된 사용자가 아닙니다.");
+
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                }
+
                 // postId 에 해당하는 게시물 조회
                 Post post = postRepository.findByPid(postId);
                 if (post == null) {
@@ -305,8 +317,8 @@ public class AnonymousPostController {
                             .body(responseJson);
                 }
 
-                // 좋아요 수 증가
-                postService.likePost(post);
+                likePostService.likePostByUser(user.get(), post);
+
                 responseJson.put("message", "게시물에 좋아요를 눌렀습니다.");
                 return ResponseEntity.status(HttpStatus.OK)
                         .contentType(MediaType.APPLICATION_JSON)

@@ -32,5 +32,6 @@ public class PostDTO {
     private String writerImageURL; // 게시글 작성자 프로필 url
     private PostType postType; // 포스트 타입
 
+    private int likeCount; // 좋아요 수
     private Long Uid; // 작성자 uid
 }

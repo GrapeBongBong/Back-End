@@ -185,9 +185,4 @@ public class PostService {
     public long getPostCount() {
         return postRepository.count();
     }*/
-
-    public void likePost(Post post) {
-        post.setLikeCount(post.getLikeCount() + 1);
-        postRepository.save(post); // 변경된 게시물 저장
-    }
 }

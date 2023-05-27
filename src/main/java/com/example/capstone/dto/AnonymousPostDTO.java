@@ -36,6 +36,7 @@ public class AnonymousPostDTO extends PostDTO {
         anonymousPostDTO.setUid(anonymousPost.getUser().getUid());
         anonymousPostDTO.setWriterImageURL(anonymousPost.getUser().getProfile_img());
         anonymousPostDTO.setPostType(PostType.A);
+        anonymousPostDTO.setLikeCount(anonymousPost.getLikes().size());
 
         // 이미지 관련 로직 추가
         anonymousPostDTO.setImages(anonymousPost.getPostImages());

@@ -60,8 +60,8 @@ public class Post {
     private List<Comment> comments = new ArrayList<>();
 
     // '좋아요' 수
-    @Column(name = "like_count")
-    private int likeCount = 0;
+    @OneToMany(mappedBy = "post")
+    private List<LikePost> likes;
 
     // 댓글 등록
     public void addComment(Comment comment) {
