@@ -168,6 +168,58 @@ public class PostService {
         }
     }
 
+    //익명 커뮤니티 게시물 좋아요 순으로 처리
+    public List<AnonymousPost> getPopularAnonymousPosts(int page) {
+        // 포스트 타입이 A인 게시물 목록 조회
+        List<AnonymousPost> anonymousPosts = (List<AnonymousPost>) postRepository.findByPostType(PostType.A);
+
+        // 좋아요 수로 내림차순 정렬
+        anonymousPosts.sort(Comparator.comparingInt(p -> p.getLikes().size()));
+        Collections.reverse(anonymousPosts);
+
+        // 페이지별로 처리
+        int pageSize = 5;
+        int totalPosts = anonymousPosts.size();
+        int totalPages = (int) Math.ceil((double) totalPosts / pageSize);
+
+        // 요청된 페이지의 범위 계산
+        int startIndex = (page - 1) * pageSize;
+        int endIndex = Math.min(startIndex + pageSize, totalPosts);
+
+        // 요청된 페이지의 게시물 반환
+        if (startIndex >= totalPosts) {
+            return Collections.emptyList();
+        } else {
+            return anonymousPosts.subList(startIndex, endIndex);
+        }
+    }
+
+    //재능 교환 게시물 좋아요 순으로 처리
+    public List<ExchangePost> getPopularExchangePosts(int page) {
+        // 포스트 타입이 A인 게시물 목록 조회
+        List<ExchangePost> exchangePosts = (List<ExchangePost>) postRepository.findByPostType(PostType.T);
+
+        // 좋아요 수로 내림차순 정렬
+        exchangePosts.sort(Comparator.comparingInt(p -> p.getLikes().size()));
+        Collections.reverse(exchangePosts);
+
+        // 페이지별로 처리
+        int pageSize = 5;
+        int totalPosts = exchangePosts.size();
+        int totalPages = (int) Math.ceil((double) totalPosts / pageSize);
+
+        // 요청된 페이지의 범위 계산
+        int startIndex = (page - 1) * pageSize;
+        int endIndex = Math.min(startIndex + pageSize, totalPosts);
+
+        // 요청된 페이지의 게시물 반환
+        if (startIndex >= totalPosts) {
+            return Collections.emptyList();
+        } else {
+            return exchangePosts.subList(startIndex, endIndex);
+        }
+    }
+
 /*    public Page<Post> getAllPosts(Pageable pageable) {
         List<Post> posts = postRepository.findAll(); // DB에서 데이터를 가져오는 코드
 

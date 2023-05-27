@@ -348,4 +348,55 @@ public class AnonymousPostController {
                     .body(responseJson);
         }
     }
+
+    // '좋아요' 많은 순으로 5개씩 게시물 목록 반환 API
+    @GetMapping("/popular")
+    @Transactional
+    public ResponseEntity<?> getPopularPosts(@RequestParam(name = "page", defaultValue = "1") int page, HttpServletRequest request) {
+        responseJson = JsonNodeFactory.instance.objectNode();
+        try {
+            // 토큰 값 추출
+            String token = request.getHeader("Authorization");
+            token = token.replaceAll("Bearer ", "");
+
+            // 토큰 검증
+            if (!tokenProvider.validateToken(token)) {
+                responseJson.put("message", "유효하지 않은 토큰입니다.");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(responseJson);
+            }
+
+            // 좋아요 순으로 정렬된 게시물 목록 가져옴
+            List<AnonymousPost> popularPosts = postService.getPopularAnonymousPosts(page);
+
+            // 필요한 DTO 객체로 변환
+            List<AnonymousPostDTO> postDTOList = AnonymousPostDTO.toAnonymousPostDTOList(popularPosts);
+
+            // DTO 객체를 JSON 형식으로 변환
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode anonymousPostsPages = objectMapper.convertValue(postDTOList, JsonNode.class);
+
+            // 게시물 타입 확인
+            for (AnonymousPost post : popularPosts) {
+                if (post.getPostType() != PostType.A) {
+                    responseJson.put("message", "익명 커뮤니티 게시물이 아닙니다.");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                }
+            }
+
+            return ResponseEntity.status(HttpStatus.OK)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(anonymousPostsPages);
+
+        } catch (Exception e) {
+            // 예외 발생 시 에러 응답 반환
+            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다."+e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(responseJson);
+        }
+    }
 }
