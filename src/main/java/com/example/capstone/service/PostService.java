@@ -1,44 +1,63 @@
 package com.example.capstone.service;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.example.capstone.data.AvailableTime;
 import com.example.capstone.dto.AnonymousPostDTO;
 import com.example.capstone.dto.ExchangePostDTO;
 import com.example.capstone.dto.PostDTO;
 import com.example.capstone.entity.*;
+import com.example.capstone.repository.ChatRoomRepository;
+import com.example.capstone.repository.ExchangePostRepository;
+import com.example.capstone.repository.PostImageRepository;
 import com.example.capstone.repository.PostRepository;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ResourceUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static com.example.capstone.entity.ExchangePost.formatDate;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class PostService {
+    private final ExchangePostRepository exchangePostRepository;
     private final PostRepository postRepository;
-    private final Environment environment;
+    private final PostImageRepository postImageRepository;
+    private final ChatRoomRepository chatRoomRepository;
+    private final AmazonS3 amazonS3Client;
 
-    public List<String> save(PostDTO postDTO, List<MultipartFile> imageFiles, UserEntity userEntity) throws IOException {
+    @Value("${cloud.aws.s3.bucket}")
+    private String bucket;
+
+    public List<ExchangePost> searchPostByCategory(String giveCate, String takeCate) {
+        List<ExchangePost> exchangePostList = new ArrayList<>();
+
+        if (giveCate.equals("All") && takeCate.equals("All")) { // giveCate, takeCate 모두 null 이면 전체 게시물 조회
+            exchangePostList = exchangePostRepository.getAllByPostType(PostType.T);
+        } else {
+            if (giveCate.equals("All")) { // takeCate 만 선택한 경우
+                exchangePostList = exchangePostRepository.getExchangePostsByTakeCate(takeCate);
+            } else if (takeCate.equals("All")) { // giveCate 만 선택한 경우
+                exchangePostList = exchangePostRepository.getExchangePostsByGiveCate(giveCate);
+            } else {
+                exchangePostList = exchangePostRepository.getExchangePostsByGiveCateAndTakeCate(giveCate, takeCate);
+            }
+        }
+
+        return exchangePostList;
+    }
+
+    public void save(PostDTO postDTO, List<MultipartFile> imageFiles, UserEntity userEntity) throws IOException {
 
         Post completedPost = new Post();
         List<PostImage> postImages = new ArrayList<>();
-        List<String> imageUrls = new ArrayList<>();
 
         System.out.println("PostDTO = " + postDTO.toString());
 
@@ -49,43 +68,78 @@ public class PostService {
         }
 
         if (imageFiles != null) { // 이미지 첨부한 경우
-            imageUrls = saveImages(imageFiles, completedPost, postImages);
+            log.info("PostService.save");
+            List<String> imageUrls = new ArrayList<>();
+            imageUrls = saveImages(imageFiles);
+            log.info("imageUrls: {}", imageUrls);
+            for (String imageUrl: imageUrls) {
+                PostImage postImage = new PostImage();
+                postImage.setPost(completedPost);
+                postImage.setFileUrl(imageUrl);
+                postImages.add(postImage);
+            }
             completedPost.setPostImages(postImages);
         }
         completedPost.setUser(userEntity); // 받아온 사용자 정보를 이용해서 게시물 작성자 정보 저장
 
         postRepository.save(completedPost);
-
-        return imageUrls;
     }
 
-    private List<String> saveImages(List<MultipartFile> imageFiles, Post completedPost, List<PostImage> postImages) throws IOException {
+    // MultipartFile 을 전달받아 File 로 전환한 후 S3 에 업로드
+    private List<String> saveImages(List<MultipartFile> imageFiles) throws IOException {
+
         List<String> imageUrls = new ArrayList<>();
 
         for (MultipartFile imageFile: imageFiles) {
-            PostImage image = new PostImage();
-            String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename(); // 파일 이름 생성
-            String imageStorageLocation = environment.getProperty("app.image.storage.location");
-            File destinationFile = new File(imageStorageLocation + "/" + fileName);
-            imageFile.transferTo(destinationFile);
-//            String filePath = ResourceUtils.getFile("classpath:images/").getPath() + "/" + fileName;
-//            imageFile.transferTo(new File(filePath));
-            log.info("filePath = " + imageStorageLocation);
+            // 메타데이터 설정
+            ObjectMetadata objectMetadata = new ObjectMetadata();
+            objectMetadata.setContentType(imageFile.getContentType());
+            objectMetadata.setContentLength(imageFile.getSize());
 
-            image.setPost(completedPost);
-            image.setFileName(fileName);
-            image.setFileOriginName(imageFile.getOriginalFilename());
-            image.setFileUrl(imageStorageLocation);
-//            image.setImage(imageFile.getBytes());
-            postImages.add(image);
-            imageUrls.add(imageStorageLocation);
+            // S3 bucket 디렉토리명 설정
+            String fileName = imageFile.getOriginalFilename();
+            String uploadFileName = UUID.randomUUID() + "_" + fileName; // S3 에 저장할 파일명
+            log.info("uploadFileName: {}", uploadFileName);
+            amazonS3Client.putObject(bucket, "images/" + uploadFileName, imageFile.getInputStream(), objectMetadata); // S3 에 파일 업로드
+            String imageUrl = amazonS3Client.getUrl(bucket, "images/" + uploadFileName).toString();
+            log.info("image 업로드 {}: ", imageUrl);
+
+            imageUrls.add(imageUrl);
         }
-
         return imageUrls;
     }
 
-    public void delete(Post post) {
+    public String delete(Post post) {
+        // 해당 포스트에 이미지 있는지 확인
+        List<PostImage> postImages = postImageRepository.findPostImagesByPost(post);
+
+        if (postImages != null) { // 이미지가 있다면 S3 에서 삭제
+            for (PostImage postImage: postImages) {
+                String imageUrl = postImage.getFileUrl();
+                String imageFileName = imageUrl.substring(imageUrl.indexOf("images/"));
+                log.info("imageFileName {}", imageFileName);
+                boolean isObjectExist = amazonS3Client.doesObjectExist(bucket, imageFileName); // S3 에 해당 이미지 있는지 확인
+                if (isObjectExist) { // S3 에 해당 이미지가 저장되어 있는 경우
+                    amazonS3Client.deleteObject(bucket, imageFileName);
+                } else {
+                    return "S3 에 저장되어 있지 않은 이미지가 있습니다.";
+                }
+            }
+        }
+
+        // 재능교환 게시글인 경우에만 채팅방이 존재하므로
+        if (post.getPostType() == PostType.T) {
+            // 채팅방이 있는 게시글이면 채팅방도 삭제
+            ExchangePost exchangePost = (ExchangePost) post;
+            boolean isExist = chatRoomRepository.existsChatRoomByExchangePost(exchangePost);
+            if (isExist) { // 채팅방 삭제 (삭제하려는 게시글과 관련된 모든 채팅방 삭제)
+                chatRoomRepository.deleteChatRoomsByExchangePost(exchangePost);
+            }
+        }
+
         postRepository.delete(post);
+
+        return "게시글을 성공적으로 삭제했습니다.";
     }
 
     public void update(PostDTO postDTO, Post post) {

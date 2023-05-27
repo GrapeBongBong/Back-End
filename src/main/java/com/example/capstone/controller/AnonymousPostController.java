@@ -1,8 +1,13 @@
 package com.example.capstone.controller;
 
+import com.example.capstone.data.PostResponse;
+import com.example.capstone.data.ServerErrorResponse;
+import com.example.capstone.data.TokenResponse;
 import com.example.capstone.dto.AnonymousPostDTO;
-import com.example.capstone.dto.ExchangePostDTO;
-import com.example.capstone.entity.*;
+import com.example.capstone.entity.AnonymousPost;
+import com.example.capstone.entity.Post;
+import com.example.capstone.entity.PostType;
+import com.example.capstone.entity.UserEntity;
 import com.example.capstone.jwt.TokenProvider;
 import com.example.capstone.repository.PostRepository;
 import com.example.capstone.repository.UserRepository;
@@ -12,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +25,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,8 +34,10 @@ import javax.validation.Valid;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
+@Validated
 @RequestMapping("/anonymous")
 public class AnonymousPostController {
 
@@ -40,7 +49,8 @@ public class AnonymousPostController {
 
     // 게시물 등록 API
     @PostMapping(value = "/post", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity<?> createPost(@Valid @RequestBody AnonymousPostDTO anonymousPostDTO, @RequestPart("images") List<MultipartFile> imageFiles, BindingResult bindingResult, HttpServletRequest request) {
+    public ResponseEntity<?> createPost(@Valid @RequestPart AnonymousPostDTO anonymousPostDTO,
+                                        @RequestPart(value = "images", required = false) List<MultipartFile> imageFiles, BindingResult bindingResult, HttpServletRequest request) {
         responseJson = JsonNodeFactory.instance.objectNode();
 
         // 필수정보 체크
@@ -60,31 +70,27 @@ public class AnonymousPostController {
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
-                responseJson.put("message", "유효하지 않은 토큰입니다.");
-
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             }
 
-            // 헤더에 첨부되어 있는 token 에서 로그인 된 사용자 정보 받아옴
-            Authentication authentication = tokenProvider.getAuthentication(token);
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-
-            String id = userDetails.getUsername(); // UserDetails 객체에서 사용자 아이디를 가져옴
-
-            // UserEntity를 사용자 아이디를 기반으로 조회
-            Optional<UserEntity> loggedInUserEntity = userRepository.findById(id); // 사용자 아이디를 기반으로 사용자 조회
+            // token 을 통해 UserEntity 조회
+            Optional<UserEntity> loggedInUserEntity = TokenResponse.getLoggedInUser(tokenProvider, token, userRepository);
             UserEntity userEntity = null;
 
             if (loggedInUserEntity.isPresent()) {
                 userEntity = loggedInUserEntity.get();
-                Long uid = userEntity.getUid(); // 가져온 UserEntity 객체에서 Uid를 가져옴
-                System.out.println("User = " + userEntity);
-                System.out.println("uid = " + uid);
 
-                // 가져온 Uid 를 해당 포스트 컬럼에 추가
-                postService.save(anonymousPostDTO, imageFiles, userEntity);
+                if (imageFiles == null) {
+                    postService.save(anonymousPostDTO, null, userEntity);
+                } else if (imageFiles.get(0).isEmpty()) {
+                    responseJson.put("message", "선택된 이미지가 없습니다.");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                } else {
+                    // 이미지에 대한 요청이 제대로 온 경우
+                    postService.save(anonymousPostDTO, imageFiles, userEntity);
+                }
 
                 responseJson.put("message", "익명커뮤니티에 게시물이 성공적으로 등록되었습니다.");
 
@@ -101,11 +107,7 @@ public class AnonymousPostController {
 
             }
         } catch (Exception e) {
-            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(responseJson);
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
 
@@ -123,22 +125,14 @@ public class AnonymousPostController {
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
-                responseJson.put("message", "유효하지 않은 토큰입니다.");
-
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             } else {
                 // Pid 이용하여 게시글 조회
                 Post post = postRepository.findByPid(postId);
+                log.info("Anonymous post {}", post);
 
                 if (post == null) {
-                    responseJson.put("message", "없거나 삭제된 게시글입니다.");
-
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(responseJson);
-
+                    return PostResponse.notExistPost("없거나 삭제된 게시글입니다.");
                 }
                 // 게시글 타입 체크
                 if (post.getPostType() != PostType.A) {
@@ -166,22 +160,25 @@ public class AnonymousPostController {
                                 .body(responseJson);
 
                     } else { // 본인이 작성한 게시글인 경우
-                        postService.delete(anonymousPost); // 게시글 삭제
+                        String message = postService.delete(anonymousPost); // 게시글 삭제
+                        responseJson.put("message", message);
+                        HttpStatus httpStatus = null;
 
-                        responseJson.put("message", "게시글을 성공적으로 삭제했습니다.");
+                        if (message.equals("S3 에 저장되어 있지 않은 이미지가 있습니다.")) {
+                            httpStatus = HttpStatus.NOT_FOUND;
+                        } else if (message.equals("게시글을 성공적으로 삭제했습니다.")) {
+                            httpStatus = HttpStatus.OK;
+                        }
 
-                        return ResponseEntity.status(HttpStatus.OK)
+                        assert httpStatus != null;
+                        return ResponseEntity.status(httpStatus)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .body(responseJson);
                     }
                 }
             }
         } catch (Exception e) {
-            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(responseJson);
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
 
@@ -199,11 +196,7 @@ public class AnonymousPostController {
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
-                responseJson.put("message", "유효하지 않은 토큰입니다.");
-
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             } else {
                 // Pid 이용하여 게시글 조회
                 Post post = postRepository.findByPid(postId);
@@ -253,11 +246,7 @@ public class AnonymousPostController {
                 }
             }
         } catch (Exception e) {
-            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(responseJson);
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
 
@@ -272,11 +261,7 @@ public class AnonymousPostController {
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
-                responseJson.put("message", "유효하지 않은 토큰입니다.");
-
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             } else {
                 // Anonymous 타입만 가져오기
                 List<AnonymousPost> anonymousPostList = (List<AnonymousPost>) postRepository.findByPostType(PostType.A);
@@ -285,21 +270,13 @@ public class AnonymousPostController {
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode anonymousPosts = objectMapper.convertValue(anonymousPostDTOList, JsonNode.class);
 
-                responseJson = JsonNodeFactory.instance.objectNode();
-                responseJson.set("posts", anonymousPosts);
-
                 return ResponseEntity.status(HttpStatus.OK)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                        .body(anonymousPosts);
             }
 
         } catch (Exception e) {
-            responseJson = JsonNodeFactory.instance.objectNode();
-            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(responseJson);
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
 

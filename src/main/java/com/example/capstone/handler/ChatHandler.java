@@ -1,6 +1,7 @@
 package com.example.capstone.handler;
 
 import com.example.capstone.dto.ChatMessageDTO;
+import com.example.capstone.dto.ChatMessageResponseDTO;
 import com.example.capstone.entity.ChatMessage;
 import com.example.capstone.entity.ChatRoom;
 import com.example.capstone.repository.ChatMessageRepository;
@@ -8,18 +9,15 @@ import com.example.capstone.repository.ChatRoomRepository;
 import com.example.capstone.service.ChatService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
-import org.springframework.web.socket.WebSocketMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import javax.persistence.EntityManager;
 import java.util.*;
 
 @RequiredArgsConstructor
@@ -47,13 +45,14 @@ public class ChatHandler extends TextWebSocketHandler { // Client 가 Send 할 �
 
         Long chatRoomId = extractChatRoomIdFromSession(session);
 
-        // 보내온 메시지를 DB 에 저장
-        chatService.saveMessage(chatMessageDTO, chatRoomId);
+        // 보내온 메시지를 DB 에 저장 후 해당 메시지 아이디 가져오기
+        Long chatMessageId = chatService.saveMessage(chatMessageDTO, chatRoomId);
 
         // 해당 채팅방의 세션들에게 메시지 전송
         List<WebSocketSession> roomSessions = chatSessions.getOrDefault(chatRoomId, new ArrayList<>());
         for (WebSocketSession roomSession: roomSessions) {
-            roomSession.sendMessage(new TextMessage(objectMapper.writeValueAsString(chatMessageDTO)));
+            ChatMessageResponseDTO chatMessageResponseDTO = ChatMessageResponseDTO.addChatMessageId(chatMessageDTO, chatMessageId);
+            roomSession.sendMessage(new TextMessage(objectMapper.writeValueAsString(chatMessageResponseDTO)));
         }
     }
 
@@ -74,24 +73,25 @@ public class ChatHandler extends TextWebSocketHandler { // Client 가 Send 할 �
             List<WebSocketSession> roomSessions = chatSessions.getOrDefault(chatRoomId, new ArrayList<>());
 
             // 해당 채팅방에 대한 세션에 최초 접속 시에만 DB 에서 메시지 조회해서 클라이언트로 전달
-            if (roomSessions.isEmpty()) {
+//            if (roomSessions.isEmpty()) {
                 // 해당 채팅방에 대해 DB 에 저장된 이전 채팅 메시지들 조회
                 List<ChatMessage> chatMessageList = chatMessageRepository.getChatMessagesByChatRoom(chatRoom);
-                List<ChatMessageDTO> chatMessageDTOList = new ArrayList<>();
+                List<ChatMessageResponseDTO> chatMessageDTOList = new ArrayList<>();
 
                 for (ChatMessage chatMessage: chatMessageList) {
-                    ChatMessageDTO chatMessageDTO = ChatMessageDTO.toChatMessageDTO(chatMessage);
-                    chatMessageDTOList.add(chatMessageDTO);
-                    log.info("chatMessageDTO: {}", chatMessageDTO);
+                    ChatMessageResponseDTO chatMessageResponseDTO = ChatMessageResponseDTO.toChatMessageResponseDTO(chatMessage);
+                    chatMessageDTOList.add(chatMessageResponseDTO);
+                    log.info("chatMessageDTO: {}", chatMessageResponseDTO);
                 }
 
                 JsonNode chatMessages = objectMapper.convertValue(chatMessageDTOList, JsonNode.class);
                 log.info("chatMessages: {}", chatMessages);
 
-                for (WebSocketSession roomSession: roomSessions) {
+                session.sendMessage(new TextMessage(objectMapper.writeValueAsString(chatMessages)));
+                /*for (WebSocketSession roomSession: roomSessions) {
                     roomSession.sendMessage(new TextMessage(objectMapper.writeValueAsString(chatMessages)));
-                }
-            }
+                }*/
+//            }
 
             // 현재 세션을 해당 채팅방의 세션 리스트에 추가
             roomSessions.add(session);

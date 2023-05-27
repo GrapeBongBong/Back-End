@@ -1,13 +1,18 @@
 package com.example.capstone.controller;
 
 import com.example.capstone.data.LoginResponse;
+import com.example.capstone.data.PostResponse;
+import com.example.capstone.data.ServerErrorResponse;
+import com.example.capstone.data.TokenResponse;
 import com.example.capstone.dto.ExchangePostDTO;
 import com.example.capstone.dto.PageResponse;
+import com.example.capstone.dto.SearchDTO;
 import com.example.capstone.entity.ExchangePost;
 import com.example.capstone.entity.Post;
 import com.example.capstone.entity.PostType;
 import com.example.capstone.entity.UserEntity;
 import com.example.capstone.jwt.TokenProvider;
+import com.example.capstone.repository.ExchangePostRepository;
 import com.example.capstone.repository.PostRepository;
 import com.example.capstone.repository.UserRepository;
 import com.example.capstone.service.PostService;
@@ -21,6 +26,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.servers.Server;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -83,30 +89,25 @@ public class ExchangePostController {
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
-                responseJson.put("message", "유효하지 않은 토큰입니다.");
-
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             }
 
-            // 헤더에 첨부되어 있는 token 에서 로그인 된 사용자 정보 받아옴
-            Authentication authentication = tokenProvider.getAuthentication(token);
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-
-            String id = userDetails.getUsername(); // UserDetails 객체에서 사용자 아이디를 가져옴
-
-            // UserEntity 를 사용자 아이디를 기반으로 조회
-            Optional<UserEntity> loggedInUserEntity = userRepository.findById(id);
+            // token 을 통해 UserEntity 조회
+            Optional<UserEntity> loggedInUserEntity = TokenResponse.getLoggedInUser(tokenProvider, token, userRepository);
             UserEntity userEntity = null;
 
             if (loggedInUserEntity.isPresent()) {
                 userEntity = loggedInUserEntity.get();
 
-                // 이미지가 없는 경우
                 if (imageFiles == null) {
-                    postService.save(exchangePostDTO, null, userEntity); // 가져온 userEntity 를 해당 포스트 컬럼에 추가
+                    postService.save(exchangePostDTO, null, userEntity);
+                } else if (imageFiles.get(0).isEmpty()) {
+                    responseJson.put("message", "선택된 이미지가 없습니다.");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
                 } else {
+                    // 이미지에 대한 요청이 제대로 온 경우
                     postService.save(exchangePostDTO, imageFiles, userEntity);
                 }
 
@@ -115,18 +116,6 @@ public class ExchangePostController {
                 return ResponseEntity.status(HttpStatus.CREATED)
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(responseJson);
-
-                /*else {
-                    List<String> imageUrls = new ArrayList<>();
-                    imageUrls = postService.save(exchangePostDTO, imageFiles, userEntity); // 가져온 userEntity 를 해당 포스트 컬럼에 추가
-
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    JsonNode imageUrlList = objectMapper.convertValue(imageUrls, JsonNode.class);
-
-                    return ResponseEntity.status(HttpStatus.CREATED)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(imageUrlList);
-                }*/
             } else {
                 responseJson.put("message", "회원이 아닙니다.");
 
@@ -136,11 +125,7 @@ public class ExchangePostController {
 
             }
         } catch (Exception e) {
-            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(responseJson);
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
 
@@ -158,22 +143,13 @@ public class ExchangePostController {
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
-                responseJson.put("message", "유효하지 않은 토큰입니다.");
-
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             } else {
                 // Pid 이용하여 게시글 조회
                 Post post = postRepository.findByPid(postId);
 
                 if (post == null) {
-                    responseJson.put("message", "없거나 삭제된 게시글입니다.");
-
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(responseJson);
-
+                    return PostResponse.notExistPost("없거나 삭제된 게시글입니다.");
                 }
                 // 게시글 타입 체크
                 if (post.getPostType() != PostType.T) {
@@ -201,23 +177,25 @@ public class ExchangePostController {
                                 .body(responseJson);
 
                     } else { // 본인이 작성한 게시글인 경우
-                        postService.delete(exchangePost); // 게시글 삭제
+                        String message = postService.delete(exchangePost); // 게시글 삭제
+                        responseJson.put("message", message);
+                        HttpStatus httpStatus = null;
 
-                        responseJson.put("message", "게시글을 성공적으로 삭제했습니다.");
+                        if (message.equals("S3 에 저장되어 있지 않은 이미지가 있습니다.")) {
+                            httpStatus = HttpStatus.NOT_FOUND;
+                        } else if (message.equals("게시글을 성공적으로 삭제했습니다.")) {
+                            httpStatus = HttpStatus.OK;
+                        }
 
-                        return ResponseEntity.status(HttpStatus.OK)
+                        assert httpStatus != null;
+                        return ResponseEntity.status(httpStatus)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .body(responseJson);
-
                     }
                 }
             }
         } catch (Exception e) {
-            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(responseJson);
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
 
@@ -235,21 +213,13 @@ public class ExchangePostController {
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
-                responseJson.put("message", "유효하지 않은 토큰입니다.");
-
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             } else {
                 // Pid 이용하여 게시글 조회
                 Post post = postRepository.findByPid(postId);
 
                 if (post == null) {
-                    responseJson.put("message", "없거나 삭제된 게시글입니다.");
-
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(responseJson);
+                    return PostResponse.notExistPost("없거나 삭제된 게시글입니다.");
                 }
                 // 게시글 타입 체크
                 if (post.getPostType() != PostType.T) {
@@ -288,11 +258,7 @@ public class ExchangePostController {
                 }
             }
         } catch (Exception e) {
-            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(responseJson);
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
 
@@ -307,11 +273,7 @@ public class ExchangePostController {
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
-                responseJson.put("message", "유효하지 않은 토큰입니다.");
-
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             } else {
                 // exchangePost 타입만 가져오기
                 List<ExchangePost> exchangePostList = (List<ExchangePost>) postRepository.findByPostType(PostType.T);
@@ -326,12 +288,7 @@ public class ExchangePostController {
             }
 
         } catch (Exception e) {
-            responseJson = JsonNodeFactory.instance.objectNode();
-            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(responseJson);
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
 
@@ -346,17 +303,12 @@ public class ExchangePostController {
 
             // 토큰 검증
             if (!tokenProvider.validateToken(token)) {
-                responseJson.put("message", "유효하지 않은 토큰입니다.");
-
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             } else {
                 // 페이지 정보를 이용하여 ExchangePost를 조회하고, ExchangePostDTO로 변환
                 Page<ExchangePost> exchangePostPage = postRepository.findByPostType(PostType.T, pageable);
                 // 변환된 ExchangePostDTO 리스트와 페이지 정보를 담은 객체 생성
                 PageResponse<ExchangePostDTO> pageResponse = PageResponse.from(exchangePostPage.map(ExchangePostDTO::toExchangePostDTO));
-
 
                 return ResponseEntity.status(HttpStatus.OK)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -364,14 +316,10 @@ public class ExchangePostController {
             }
 
         } catch (Exception e) {
-            responseJson = JsonNodeFactory.instance.objectNode();
-            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(responseJson);
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
+
     // 게시글 상세 조회 API
     /*@Transactional
     @GetMapping("/detail/{postId}")
@@ -460,6 +408,38 @@ public class ExchangePostController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(responseJson);
+        }
+    }
+
+    // 게시물 카테고리별 검색 API
+    @Transactional
+    @PostMapping("/search")
+    public ResponseEntity<?> searchPost(@RequestBody SearchDTO searchDTO, HttpServletRequest request) {
+        try {
+            // 토큰 값 추출
+            String token = request.getHeader("Authorization");
+            token = token.replaceAll("Bearer ", "");
+
+            // 토큰 검증
+            if (!tokenProvider.validateToken(token)) {
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
+            } else {
+                String giveCate = searchDTO.getGiveCate();
+                String takeCate = searchDTO.getTakeCate();
+
+                List<ExchangePost> exchangePostList = postService.searchPostByCategory(giveCate, takeCate);
+                List<ExchangePostDTO> exchangePostDTOList = ExchangePostDTO.toExchangePostDTOList(exchangePostList);
+
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode exchangePosts = objectMapper.convertValue(exchangePostDTOList, JsonNode.class);
+
+                return ResponseEntity.status(HttpStatus.OK)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(exchangePosts);
+            }
+
+        } catch (Exception e) {
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
     }
 }

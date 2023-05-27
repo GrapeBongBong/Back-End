@@ -1,12 +1,10 @@
 package com.example.capstone.service;
 
 import com.example.capstone.dto.ChatMessageDTO;
-import com.example.capstone.entity.ChatMessage;
-import com.example.capstone.entity.ChatRoom;
-import com.example.capstone.entity.ExchangePost;
-import com.example.capstone.entity.UserEntity;
+import com.example.capstone.entity.*;
 import com.example.capstone.repository.ChatMessageRepository;
 import com.example.capstone.repository.ChatRoomRepository;
+import com.example.capstone.repository.PostRepository;
 import com.example.capstone.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,21 +21,22 @@ import java.util.Optional;
 public class ChatService {
 
     private final UserRepository userRepository;
+    private final PostRepository postRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
 
-    public List<ChatRoom> getAllRooms() {
-        return chatRoomRepository.findAll();
+    public List<ChatRoom> getRoomsByPostId(Long postId) {
+        ExchangePost exchangePost = (ExchangePost) postRepository.findByPid(postId);
+        return chatRoomRepository.findChatRoomsByExchangePost(exchangePost);
     }
 
-    public ChatRoom findRoomById(Long roomId) { return chatRoomRepository.findChatRoomByRoomId(roomId); }
-
-    public ChatRoom createRoom(UserEntity user1, UserEntity user2, ExchangePost exchangePost) {
+    public ChatRoom createRoom(UserEntity user1, UserEntity user2, Post post) {
         // user1 >> 게시글 작성자
         // user2 >> 해당 게시글에 신청한 사람
 
+        ExchangePost exchangePost = (ExchangePost) post;
         ChatRoom chatRoom = new ChatRoom();
-        String roomName = user2.getNickName() + " (" + user2.getNickName() + ")";
+        String roomName = exchangePost.getTitle() + " (" + user2.getNickName() + ")";
         chatRoom.setRoomName(roomName);
         chatRoom.setDate(formatDate(LocalDateTime.now()));
         chatRoom.setPostWriter(user1);
@@ -49,7 +48,18 @@ public class ChatService {
         return chatRoom;
     }
 
-    public void saveMessage(ChatMessageDTO chatMessageDTO, Long chatRoomId) {
+    public ChatRoom isExistChatRoom(Long exchangePostId, String applicantId) {
+        // exchangePostId 에 해당하는 게시글 찾기
+        ExchangePost exchangePost = (ExchangePost) postRepository.findByPid(exchangePostId);
+        Optional<UserEntity> applicant = userRepository.findById(applicantId);
+        if (applicant.isPresent()) {
+            return chatRoomRepository.findChatRoomByExchangePostAndApplicant(exchangePost, applicant.get());
+        } else {
+            return null;
+        }
+    }
+
+    public Long saveMessage(ChatMessageDTO chatMessageDTO, Long chatRoomId) { // 저장 후 해당 채팅 메시지 아이디 리턴
         String senderId = chatMessageDTO.getSenderId();
         Optional<UserEntity> loggedInUser = userRepository.findById(senderId);
         ChatRoom chatRoom = chatRoomRepository.findChatRoomByRoomId(chatRoomId);
@@ -66,6 +76,7 @@ public class ChatService {
         chatMessage.setDate(formatDate(LocalDateTime.now()));
 
         chatMessageRepository.save(chatMessage);
+        return chatMessage.getId();
     }
 
     public String formatDate(LocalDateTime localDateTime) {

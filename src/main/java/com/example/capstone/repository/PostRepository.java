@@ -5,6 +5,7 @@ import com.example.capstone.entity.Post;
 import com.example.capstone.entity.PostType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -18,4 +19,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     List<?> findByPostType(PostType postType);
 
     Page<ExchangePost> findByPostType(PostType postType, Pageable pageable);
+
+    @EntityGraph(attributePaths = "user")
+    List<?> findByUserIdAndPostType(String user_id, PostType postType);
 }

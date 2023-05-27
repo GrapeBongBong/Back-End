@@ -35,6 +35,8 @@ public class ExchangePostDTO extends PostDTO{
 
     private final PostType postType = PostType.T; // 포스트 타입
 
+    private Boolean status; // 재능 거래 상태
+
     public static List<ExchangePostDTO> toExchangePostDTOList(List<ExchangePost> exchangePostList) {
         List<ExchangePostDTO> exchangePostDTOList = new ArrayList<>();
 
@@ -54,12 +56,14 @@ public class ExchangePostDTO extends PostDTO{
         exchangePostDTO.setWriterNick(exchangePost.getUser().getNickName()); // 작성자 닉네임
         exchangePostDTO.setWriterId(exchangePost.getUser().getId()); // 작성자 아이디
         exchangePostDTO.setUid(exchangePost.getUser().getUid()); // 작성자 uid
+        exchangePostDTO.setWriterImageURL(exchangePost.getUser().getProfile_img());
 
         exchangePostDTO.setGiveCate(exchangePost.getGiveCate());
         exchangePostDTO.setGiveTalent(exchangePost.getGiveTalent());
         exchangePostDTO.setTakeCate(exchangePost.getTakeCate());
         exchangePostDTO.setTakeTalent(exchangePost.getTakeTalent());
         exchangePostDTO.setPostType(PostType.T);
+        exchangePostDTO.setStatus(exchangePost.getStatus());
 
         AvailableTime availableTimeDTO = new AvailableTime();
         availableTimeDTO.setDays(exchangePost.getDays());

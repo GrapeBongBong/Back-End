@@ -21,15 +21,6 @@ public class PostImage {
     @JsonBackReference // 해당 객체를 직렬화할 때 post 는 무시 (무한루프 방지)
     private Post post;
 
-    /*@Lob
-    private byte[] image;*/
-
-    @Column(name = "fileName", nullable = false)
-    private String fileName;
-
-    @Column(name = "fileOriginName", nullable = false)
-    private String fileOriginName;
-
     @Column(name = "fileUrl", nullable = false)
     private String fileUrl;
 

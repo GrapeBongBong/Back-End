@@ -1,6 +1,7 @@
 package com.example.capstone.entity;
 
 import com.example.capstone.dto.PostDTO;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Getter;
 import lombok.Setter;
