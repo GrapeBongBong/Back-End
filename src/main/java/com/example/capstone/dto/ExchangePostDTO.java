@@ -56,6 +56,7 @@ public class ExchangePostDTO extends PostDTO{
         exchangePostDTO.setWriterNick(exchangePost.getUser().getNickName()); // 작성자 닉네임
         exchangePostDTO.setWriterId(exchangePost.getUser().getId()); // 작성자 아이디
         exchangePostDTO.setUid(exchangePost.getUser().getUid()); // 작성자 uid
+        exchangePostDTO.setWriterImageURL(exchangePost.getUser().getProfile_img());
 
         exchangePostDTO.setGiveCate(exchangePost.getGiveCate());
         exchangePostDTO.setGiveTalent(exchangePost.getGiveTalent());
