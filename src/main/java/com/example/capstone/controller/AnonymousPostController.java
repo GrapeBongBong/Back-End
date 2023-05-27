@@ -4,6 +4,7 @@ import com.example.capstone.data.PostResponse;
 import com.example.capstone.data.ServerErrorResponse;
 import com.example.capstone.data.TokenResponse;
 import com.example.capstone.dto.AnonymousPostDTO;
+import com.example.capstone.dto.PageResponse;
 import com.example.capstone.entity.AnonymousPost;
 import com.example.capstone.entity.Post;
 import com.example.capstone.entity.PostType;
@@ -19,6 +20,8 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +35,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -421,4 +425,61 @@ public class AnonymousPostController {
                     .body(responseJson);
         }
     }
+
+    // 익명 커뮤니티 게시물 페이징 처리
+    @Transactional
+    @GetMapping("/anonymous-posts")
+    public ResponseEntity<?> getAnonymousPostList(Pageable pageable, HttpServletRequest request) {
+        try {
+            // 토큰 값 추출
+            String token = request.getHeader("Authorization");
+            token = token.replaceAll("Bearer ", "");
+
+            // 토큰 검증
+            if (!tokenProvider.validateToken(token)) {
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
+            } else {
+                // 사용자 정보 가져오기
+                Optional<UserEntity> user = TokenResponse.getLoggedInUser(tokenProvider, token, userRepository);
+                if (user.isEmpty()) {
+                    responseJson.put("message", "가입된 사용자가 아닙니다.");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                }
+
+                // 익명 커뮤니티 게시물 타입만 가져오기
+                Page<AnonymousPost> anonymousPostPage = postRepository.findByPostType(PostType.A, pageable);
+                List<AnonymousPost> postList = anonymousPostPage.getContent();
+
+                List<AnonymousPost> anonymousPostList = new ArrayList<>();
+                for (Post post : postList) {
+                    if (post instanceof AnonymousPost) {
+                        anonymousPostList.add((AnonymousPost) post);
+                    }
+                }
+
+                // 현재 로그인된 사용자가 해당 게시글에 좋아요를 눌렀는지 체크
+                List<Boolean> isLikedList = likePostService.getIsLikedForAnonymousPostList(user.get(), anonymousPostList);
+
+                // 변환된 AnonymousPostDTO 리스트와 페이지 정보를 담은 객체 생성
+                PageResponse<AnonymousPostDTO> pageResponse = PageResponse.from(anonymousPostPage.map(anonymousPost -> {
+                    // 해당 게시글이 anonymousPostList에 존재하는지 확인하고 인덱스 가져오기
+                    int index = anonymousPostList.indexOf(anonymousPost);
+                    // isLikedList에서 해당 인덱스의 값을 가져오고, 존재하지 않는 경우 false
+                    boolean isLiked = (index != -1) ? isLikedList.get(index) : false;
+                    // AnonymousPostDTO로 변환하여 반환
+                    return AnonymousPostDTO.toAnonymousPostDTO(anonymousPost, isLiked);
+                }));
+
+                return ResponseEntity.status(HttpStatus.OK)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(pageResponse);
+            }
+
+        } catch (Exception e) {
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
+        }
+    }
+
 }

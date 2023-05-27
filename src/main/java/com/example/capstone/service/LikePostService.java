@@ -2,7 +2,6 @@ package com.example.capstone.service;
 
 import com.example.capstone.entity.*;
 import com.example.capstone.repository.LikePostRepository;
-import com.example.capstone.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -39,6 +38,10 @@ public class LikePostService {
 
     public List<Boolean>  getIsLikedForExchangePostList(UserEntity user, List<ExchangePost> exchangePostList) {
         List<Post> postList = new ArrayList<>(exchangePostList);
+        return getIsLiked(user, postList);
+    }
+    public List<Boolean>  getIsLikedForAnonymousPostList(UserEntity user, List<AnonymousPost> anonymousPostList) {
+        List<Post> postList = new ArrayList<>(anonymousPostList);
         return getIsLiked(user, postList);
     }
 }
