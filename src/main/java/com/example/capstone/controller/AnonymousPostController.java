@@ -364,6 +364,75 @@ public class AnonymousPostController {
         }
     }
 
+    // '좋아요' 취소 API
+    @Transactional
+    @PostMapping("/{postId}/unlike")
+    public ResponseEntity<?> unlikePost(@PathVariable Long postId, HttpServletRequest request) {
+        try {
+            // 토큰 값 추출
+            String token = request.getHeader("Authorization");
+            token = token.replaceAll("Bearer ", "");
+
+            // 토큰 검증
+            if (!tokenProvider.validateToken(token)) {
+                responseJson.put("message", "유효하지 않은 토큰입니다.");
+
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(responseJson);
+            } else {
+                Optional<UserEntity> user = TokenResponse.getLoggedInUser(tokenProvider, token, userRepository);
+
+                if (user.isEmpty()) {
+                    responseJson.put("message", "가입된 사용자가 아닙니다.");
+
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                }
+                // postId 에 해당하는 게시물 조회
+                Post post = postRepository.findByPid(postId);
+                if (post == null) {
+                    responseJson.put("message", "없거나 삭제된 게시글입니다.");
+
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                }
+
+                if (post.getPostType() != PostType.A) {
+                    responseJson.put("message", "익명 게시글이 아닙니다.");
+
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST) // 400
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                }
+
+                // 좋아요를 한 게시글인지 체크 (좋아요를 한 게시글에 대해서 취소)
+                boolean isLiked = likePostService.isLiked(user.get(), post);
+                if (isLiked) {
+                    likePostService.unlikePostByUser(user.get(), post);
+                    responseJson.put("message", "해당 게시글에 좋아요를 취소했습니다.");
+                    return ResponseEntity.status(HttpStatus.OK)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                } else {
+                    responseJson.put("message", "좋아요를 한 게시글이 아닙니다.");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                }
+            }
+        } catch (Exception e) {
+            responseJson = JsonNodeFactory.instance.objectNode();
+            responseJson.put("message", "서버에 예기치 않은 오류가 발생했습니다." + e);
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(responseJson);
+        }
+    }
+
     // '좋아요' 많은 순으로 5개씩 게시물 목록 반환 API
     @GetMapping("/popular")
     @Transactional

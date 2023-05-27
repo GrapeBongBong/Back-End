@@ -4,6 +4,7 @@ import com.example.capstone.entity.*;
 import com.example.capstone.repository.LikePostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +21,10 @@ public class LikePostService {
         likePost.setPost(post);
 
         likePostRepository.save(likePost);
+    }
+
+    public void unlikePostByUser(UserEntity user, Post post) {
+        likePostRepository.deleteLikePostByUserAndPost(user, post);
     }
 
     public boolean isLiked(UserEntity user, Post post) { // 좋아요를 누른 게시글인지 체크
