@@ -34,6 +34,7 @@ public class AnonymousPostDTO extends PostDTO {
         anonymousPostDTO.setWriterNick(anonymousPost.getUser().getNickName()); // 작성자 닉네임
         anonymousPostDTO.setWriterId(anonymousPost.getUser().getId()); // 작성자 아이디
         anonymousPostDTO.setUid(anonymousPost.getUser().getUid());
+        anonymousPostDTO.setWriterImageURL(anonymousPost.getUser().getProfile_img());
         anonymousPostDTO.setPostType(PostType.A);
 
         // 이미지 관련 로직 추가
