@@ -316,6 +316,13 @@ public class AnonymousPostController {
                             .contentType(MediaType.APPLICATION_JSON)
                             .body(responseJson);
                 }
+                if (post.getPostType() != PostType.A) {
+                    responseJson.put("message", "익명 커뮤니티 게시글이 아닙니다.");
+
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST) // 400
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                }
 
                 likePostService.likePostByUser(user.get(), post);
 

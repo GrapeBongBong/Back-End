@@ -406,6 +406,14 @@ public class ExchangePostController {
                             .body(responseJson);
                 }
 
+                if (post.getPostType() != PostType.T) {
+                    responseJson.put("message", "재능 거래 게시글이 아닙니다.");
+
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST) // 400
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                }
+
                 likePostService.likePostByUser(user.get(), post);
 
                 responseJson.put("message", "게시물에 좋아요를 눌렀습니다.");
