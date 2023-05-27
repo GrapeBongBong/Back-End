@@ -2,6 +2,7 @@ package com.example.capstone.dto;
 
 import com.example.capstone.data.AvailableTime;
 import com.example.capstone.entity.ExchangePost;
+import com.example.capstone.entity.Post;
 import com.example.capstone.entity.PostType;
 import lombok.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,17 +38,18 @@ public class ExchangePostDTO extends PostDTO{
 
     private Boolean status; // 재능 거래 상태
 
-    public static List<ExchangePostDTO> toExchangePostDTOList(List<ExchangePost> exchangePostList) {
+    public static List<ExchangePostDTO> toExchangePostDTOList(List<Post> postList, List<Boolean> isLikedList) {
         List<ExchangePostDTO> exchangePostDTOList = new ArrayList<>();
 
-        for (ExchangePost exchangePost: exchangePostList) {
-            exchangePostDTOList.add(toExchangePostDTO(exchangePost));
+        for (int i=0; i<postList.size(); i++) {
+            ExchangePost exchangePost = (ExchangePost) postList.get(i);
+            exchangePostDTOList.add(toExchangePostDTO(exchangePost, isLikedList.get(i)));
         }
 
         return exchangePostDTOList;
     }
 
-    public static ExchangePostDTO toExchangePostDTO(ExchangePost exchangePost) { // entity -> dto
+    public static ExchangePostDTO toExchangePostDTO(ExchangePost exchangePost, Boolean isLiked) { // entity -> dto
         ExchangePostDTO exchangePostDTO = new ExchangePostDTO();
         exchangePostDTO.setPid(exchangePost.getPid()); // 게시글 아이디
         exchangePostDTO.setTitle(exchangePost.getTitle());
@@ -58,6 +60,7 @@ public class ExchangePostDTO extends PostDTO{
         exchangePostDTO.setUid(exchangePost.getUser().getUid()); // 작성자 uid
         exchangePostDTO.setWriterImageURL(exchangePost.getUser().getProfile_img());
         exchangePostDTO.setLikeCount(exchangePost.getLikes().size());
+        exchangePostDTO.setLiked(isLiked);
 
         exchangePostDTO.setGiveCate(exchangePost.getGiveCate());
         exchangePostDTO.setGiveTalent(exchangePost.getGiveTalent());

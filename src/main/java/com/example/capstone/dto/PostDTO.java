@@ -5,7 +5,6 @@ import com.example.capstone.entity.PostType;
 import lombok.*;
 
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @Getter
@@ -32,6 +31,7 @@ public class PostDTO {
     private String writerImageURL; // 게시글 작성자 프로필 url
     private PostType postType; // 포스트 타입
 
+    private boolean isLiked; // 좋아요 눌렀는지 확인
     private int likeCount; // 좋아요 수
     private Long Uid; // 작성자 uid
 }

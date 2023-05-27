@@ -275,9 +275,20 @@ public class ExchangePostController {
             if (!tokenProvider.validateToken(token)) {
                 return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             } else {
+                // 사용자 정보 가져오기
+                Optional<UserEntity> user = TokenResponse.getLoggedInUser(tokenProvider, token, userRepository);
+                if (user.isEmpty()) {
+                    responseJson.put("message", "가입된 사용자자 아닙니다.");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                }
                 // exchangePost 타입만 가져오기
-                List<ExchangePost> exchangePostList = (List<ExchangePost>) postRepository.findByPostType(PostType.T);
-                List<ExchangePostDTO> exchangePostDTOList = ExchangePostDTO.toExchangePostDTOList(exchangePostList);
+                List<Post> exchangePostList = postRepository.findByPostType(PostType.T);
+
+                // 현재 로그인된 사용자가 해당 게시글에 좋아요를 눌렀는지 체크
+                List<Boolean> isLikedList = likePostService.getIsLiked(user.get(), exchangePostList);
+                List<ExchangePostDTO> exchangePostDTOList = ExchangePostDTO.toExchangePostDTOList(exchangePostList, isLikedList);
 
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode exchangePosts = objectMapper.convertValue(exchangePostDTOList, JsonNode.class);
@@ -293,7 +304,7 @@ public class ExchangePostController {
     }
 
     //재능 교환 게시물 페이징 처리
-    @Transactional
+    /*@Transactional
     @GetMapping("/exchange-posts")
     public ResponseEntity<?> getPostList(Pageable pageable, HttpServletRequest request) {
         try {
@@ -318,7 +329,7 @@ public class ExchangePostController {
         } catch (Exception e) {
             return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
-    }
+    }*/
 
     // 게시글 상세 조회 API
     /*@Transactional
@@ -451,11 +462,26 @@ public class ExchangePostController {
             if (!tokenProvider.validateToken(token)) {
                 return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             } else {
+                Optional<UserEntity> user = TokenResponse.getLoggedInUser(tokenProvider, token, userRepository);
+
+                if (user.isEmpty()) {
+                    responseJson.put("message", "가입된 사용자가 아닙니다.");
+
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                }
+
                 String giveCate = searchDTO.getGiveCate();
                 String takeCate = searchDTO.getTakeCate();
 
                 List<ExchangePost> exchangePostList = postService.searchPostByCategory(giveCate, takeCate);
-                List<ExchangePostDTO> exchangePostDTOList = ExchangePostDTO.toExchangePostDTOList(exchangePostList);
+                List<Post> postList = new ArrayList<>(exchangePostList);
+
+                // 현재 로그인된 사용자가 해당 게시글에 좋아요를 눌렀는지 체크
+                List<Boolean> isLikedList = likePostService.getIsLiked(user.get(), postList);
+
+                List<ExchangePostDTO> exchangePostDTOList = ExchangePostDTO.toExchangePostDTOList(postList, isLikedList);
 
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode exchangePosts = objectMapper.convertValue(exchangePostDTOList, JsonNode.class);

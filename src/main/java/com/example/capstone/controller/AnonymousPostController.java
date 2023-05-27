@@ -265,9 +265,20 @@ public class AnonymousPostController {
             if (!tokenProvider.validateToken(token)) {
                 return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             } else {
+                // 사용자 정보 가져오기
+                Optional<UserEntity> user = TokenResponse.getLoggedInUser(tokenProvider, token, userRepository);
+                if (user.isEmpty()) {
+                    responseJson.put("message", "가입된 사용자자 아닙니다.");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                }
+
                 // Anonymous 타입만 가져오기
-                List<AnonymousPost> anonymousPostList = (List<AnonymousPost>) postRepository.findByPostType(PostType.A);
-                List<AnonymousPostDTO> anonymousPostDTOList = AnonymousPostDTO.toAnonymousPostDTOList(anonymousPostList);
+                List<Post> anonymousPostList = postRepository.findByPostType(PostType.A);
+                // 현재 로그인된 사용자가 해당 게시글에 좋아요를 눌렀는지 체크
+                List<Boolean> isLikedList = likePostService.getIsLiked(user.get(), anonymousPostList);
+                List<AnonymousPostDTO> anonymousPostDTOList = AnonymousPostDTO.toAnonymousPostDTOList(anonymousPostList, isLikedList);
 
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode anonymousPosts = objectMapper.convertValue(anonymousPostDTOList, JsonNode.class);
