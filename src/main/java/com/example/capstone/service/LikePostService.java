@@ -36,4 +36,9 @@ public class LikePostService {
 
         return isLiked;
     }
+
+    public List<Boolean>  getIsLikedForExchangePostList(UserEntity user, List<ExchangePost> exchangePostList) {
+        List<Post> postList = new ArrayList<>(exchangePostList);
+        return getIsLiked(user, postList);
+    }
 }

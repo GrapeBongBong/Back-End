@@ -169,9 +169,9 @@ public class PostService {
     }
 
     //익명 커뮤니티 게시물 좋아요 순으로 처리
-    public List<AnonymousPost> getPopularAnonymousPosts(int page) {
+    public List<Post> getPopularAnonymousPosts(int page) {
         // 포스트 타입이 A인 게시물 목록 조회
-        List<AnonymousPost> anonymousPosts = (List<AnonymousPost>) postRepository.findByPostType(PostType.A);
+        List<Post> anonymousPosts = postRepository.findByPostType(PostType.A);
 
         // 좋아요 수로 내림차순 정렬
         anonymousPosts.sort(Comparator.comparingInt(p -> p.getLikes().size()));
@@ -195,9 +195,9 @@ public class PostService {
     }
 
     //재능 교환 게시물 좋아요 순으로 처리
-    public List<ExchangePost> getPopularExchangePosts(int page) {
+    public List<Post> getPopularExchangePosts(int page) {
         // 포스트 타입이 A인 게시물 목록 조회
-        List<ExchangePost> exchangePosts = (List<ExchangePost>) postRepository.findByPostType(PostType.T);
+        List<Post> exchangePosts = postRepository.findByPostType(PostType.T);
 
         // 좋아요 수로 내림차순 정렬
         exchangePosts.sort(Comparator.comparingInt(p -> p.getLikes().size()));

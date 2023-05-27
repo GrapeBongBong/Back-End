@@ -378,18 +378,29 @@ public class AnonymousPostController {
                         .body(responseJson);
             }
 
+            // 사용자 정보 가져오기
+            Optional<UserEntity> user = TokenResponse.getLoggedInUser(tokenProvider, token, userRepository);
+            if (user.isEmpty()) {
+                responseJson.put("message", "가입된 사용자가 아닙니다.");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(responseJson);
+            }
+            // Anonymous 타입만 가져오기
+            List<Post> anonymousPostList = postRepository.findByPostType(PostType.A);
+            // 현재 로그인된 사용자가 해당 게시글에 좋아요를 눌렀는지 체크
+            List<Boolean> isLikedList = likePostService.getIsLiked(user.get(), anonymousPostList);
             // 좋아요 순으로 정렬된 게시물 목록 가져옴
-            List<AnonymousPost> popularPosts = postService.getPopularAnonymousPosts(page);
-
+            List<Post> popularPosts = postService.getPopularAnonymousPosts(page);
             // 필요한 DTO 객체로 변환
-            List<AnonymousPostDTO> postDTOList = AnonymousPostDTO.toAnonymousPostDTOList(popularPosts);
+            List<AnonymousPostDTO> postDTOList = AnonymousPostDTO.toAnonymousPostDTOList(popularPosts, isLikedList);
 
             // DTO 객체를 JSON 형식으로 변환
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode anonymousPostsPages = objectMapper.convertValue(postDTOList, JsonNode.class);
 
             // 게시물 타입 확인
-            for (AnonymousPost post : popularPosts) {
+            for (Post post : popularPosts) {
                 if (post.getPostType() != PostType.A) {
                     responseJson.put("message", "익명 커뮤니티 게시물이 아닙니다.");
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)

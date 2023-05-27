@@ -29,6 +29,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -278,7 +279,7 @@ public class ExchangePostController {
                 // 사용자 정보 가져오기
                 Optional<UserEntity> user = TokenResponse.getLoggedInUser(tokenProvider, token, userRepository);
                 if (user.isEmpty()) {
-                    responseJson.put("message", "가입된 사용자자 아닙니다.");
+                    responseJson.put("message", "가입된 사용자가 아닙니다.");
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
                             .contentType(MediaType.APPLICATION_JSON)
                             .body(responseJson);
@@ -304,7 +305,7 @@ public class ExchangePostController {
     }
 
     //재능 교환 게시물 페이징 처리
-    /*@Transactional
+    @Transactional
     @GetMapping("/exchange-posts")
     public ResponseEntity<?> getPostList(Pageable pageable, HttpServletRequest request) {
         try {
@@ -316,10 +317,38 @@ public class ExchangePostController {
             if (!tokenProvider.validateToken(token)) {
                 return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
             } else {
-                // 페이지 정보를 이용하여 ExchangePost를 조회하고, ExchangePostDTO로 변환
+                // 사용자 정보 가져오기
+                Optional<UserEntity> user = TokenResponse.getLoggedInUser(tokenProvider, token, userRepository);
+                if (user.isEmpty()) {
+                    responseJson.put("message", "가입된 사용자가 아닙니다.");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                }
+
+                // exchangePost 타입만 가져오기
                 Page<ExchangePost> exchangePostPage = postRepository.findByPostType(PostType.T, pageable);
+                List<ExchangePost> postList = exchangePostPage.getContent();
+
+                List<ExchangePost> exchangePostList = new ArrayList<>();
+                for (Post post : postList) {
+                    if (post instanceof ExchangePost) {
+                        exchangePostList.add((ExchangePost) post);
+                    }
+                }
+
+                // 현재 로그인된 사용자가 해당 게시글에 좋아요를 눌렀는지 체크
+                List<Boolean> isLikedList = likePostService. getIsLikedForExchangePostList(user.get(), exchangePostList);
+
                 // 변환된 ExchangePostDTO 리스트와 페이지 정보를 담은 객체 생성
-                PageResponse<ExchangePostDTO> pageResponse = PageResponse.from(exchangePostPage.map(ExchangePostDTO::toExchangePostDTO));
+                PageResponse<ExchangePostDTO> pageResponse = PageResponse.from(exchangePostPage.map(exchangePost -> {
+                    // 해당 게시글이 exchangePostList에 존재하는지 확인하고 인덱스 가져오기
+                    int index = exchangePostList.indexOf(exchangePost);
+                    // isLikedList에서 해당 인덱스의 값을 가져오고, 존재하지 않는 경우 false
+                    boolean isLiked = (index != -1) ? isLikedList.get(index) : false;
+                    // ExchangePostDTO로 변환하여 반환
+                    return ExchangePostDTO.toExchangePostDTO(exchangePost, isLiked);
+                }));
 
                 return ResponseEntity.status(HttpStatus.OK)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -329,7 +358,7 @@ public class ExchangePostController {
         } catch (Exception e) {
             return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
         }
-    }*/
+    }
 
     // 게시글 상세 조회 API
     /*@Transactional
@@ -513,19 +542,29 @@ public class ExchangePostController {
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(responseJson);
             }
-
+            // 사용자 정보 가져오기
+            Optional<UserEntity> user = TokenResponse.getLoggedInUser(tokenProvider, token, userRepository);
+            if (user.isEmpty()) {
+                responseJson.put("message", "가입된 사용자가 아닙니다.");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(responseJson);
+            }
+            // 재능 교환 게시물 타입만 가져오기
+            List<Post> exchangePostList = postRepository.findByPostType(PostType.T);
+            // 현재 로그인된 사용자가 해당 게시글에 좋아요를 눌렀는지 체크
+            List<Boolean> isLikedList = likePostService.getIsLiked(user.get(), exchangePostList);
             // 좋아요 순으로 정렬된 게시물 목록 가져옴
-            List<ExchangePost> popularPosts = postService.getPopularExchangePosts(page);
-
+            List<Post> popularPosts = postService.getPopularExchangePosts(page);
             // 필요한 DTO 객체로 변환
-            List<ExchangePostDTO> postDTOList = ExchangePostDTO.toExchangePostDTOList(popularPosts);
+            List<ExchangePostDTO> postDTOList = ExchangePostDTO.toExchangePostDTOList(popularPosts, isLikedList);
 
             // DTO 객체를 JSON 형식으로 변환
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode exchangePostsPages = objectMapper.convertValue(postDTOList, JsonNode.class);
 
             // 게시물 타입 확인
-            for (ExchangePost post : popularPosts) {
+            for (Post post : popularPosts) {
                 if (post.getPostType() != PostType.T) {
                     responseJson.put("message", "재능 교환 게시물이 아닙니다.");
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
