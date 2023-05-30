@@ -268,6 +268,7 @@ public class ExchangePostController {
     @GetMapping("/posts")
     public ResponseEntity<?> getPostList(HttpServletRequest request) {
         try {
+            responseJson = JsonNodeFactory.instance.objectNode();
             // 토큰 값 추출
             String token = request.getHeader("Authorization");
             token = token.replaceAll("Bearer ", "");
@@ -413,6 +414,7 @@ public class ExchangePostController {
     @PostMapping("/{postId}/like")
     public ResponseEntity<?> likePost(@PathVariable Long postId, HttpServletRequest request) {
         try {
+            responseJson = JsonNodeFactory.instance.objectNode();
             // 토큰 값 추출
             String token = request.getHeader("Authorization");
             token = token.replaceAll("Bearer ", "");
@@ -483,6 +485,7 @@ public class ExchangePostController {
     @PostMapping("/{postId}/unlike")
     public ResponseEntity<?> unlikePost(@PathVariable Long postId, HttpServletRequest request) {
         try {
+            responseJson = JsonNodeFactory.instance.objectNode();
             // 토큰 값 추출
             String token = request.getHeader("Authorization");
             token = token.replaceAll("Bearer ", "");
@@ -552,6 +555,7 @@ public class ExchangePostController {
     @PostMapping("/search")
     public ResponseEntity<?> searchPost(@RequestBody SearchDTO searchDTO, HttpServletRequest request) {
         try {
+            responseJson = JsonNodeFactory.instance.objectNode();
             // 토큰 값 추출
             String token = request.getHeader("Authorization");
             token = token.replaceAll("Bearer ", "");

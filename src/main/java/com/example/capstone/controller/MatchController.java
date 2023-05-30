@@ -1,15 +1,15 @@
 package com.example.capstone.controller;
 
+import com.example.capstone.data.PostResponse;
 import com.example.capstone.data.ServerErrorResponse;
 import com.example.capstone.data.TokenResponse;
-import com.example.capstone.entity.ChatRoom;
-import com.example.capstone.entity.ExchangePost;
-import com.example.capstone.entity.Match;
-import com.example.capstone.entity.Post;
+import com.example.capstone.entity.*;
 import com.example.capstone.jwt.TokenProvider;
 import com.example.capstone.repository.ChatRoomRepository;
 import com.example.capstone.repository.MatchRepository;
 import com.example.capstone.repository.PostRepository;
+import com.example.capstone.repository.UserRepository;
+import com.example.capstone.service.RatingService;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.swagger.annotations.Api;
@@ -20,10 +20,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
 import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 
@@ -33,10 +31,12 @@ import java.util.Optional;
 @Slf4j
 public class MatchController {
 
+    private final RatingService ratingService;
     private final TokenProvider tokenProvider;
     private final PostRepository postRepository;
     private final MatchRepository matchRepository;
     private final ChatRoomRepository chatRoomRepository;
+    private final UserRepository userRepository;
     private ObjectNode responseJson;
 
     // 매칭 진행 API
@@ -124,6 +124,69 @@ public class MatchController {
             } else {
                 responseJson.put("message", "매칭을 진행할 게시물을 찾을 수 없습니다.");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(responseJson);
+            }
+        } catch (Exception e) {
+            return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);
+        }
+    }
+
+    @PostMapping("/match/{postId}/rating/{score}")
+    public ResponseEntity<?> ratingMatch(@PathVariable Long postId, @PathVariable int score, HttpServletRequest request) {
+        try {
+            responseJson = JsonNodeFactory.instance.objectNode();
+
+            // 토큰 값 추출
+            String token = request.getHeader("Authorization");
+            token = token.replaceAll("Bearer ", "");
+
+            // 토큰 검증
+            if (!tokenProvider.validateToken(token)) {
+                return TokenResponse.handleUnauthorizedRequest("유효하지 않은 토큰입니다.");
+            } else {
+                Optional<UserEntity> user = TokenResponse.getLoggedInUser(tokenProvider, token, userRepository);
+
+                if (user.isEmpty()) {
+                    responseJson.put("message", "가입된 사용자가 아닙니다.");
+
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                }
+
+                // 매칭 완료된 게시물 pid 랑 로그인된 사용자 id(신청자 또는 게시글 작성자) 로 매칭 내역 검색
+                Long userId = user.get().getUid();
+                Post post = postRepository.findByPid(postId);
+                Long opponentUid; // 매칭이 이루어진 상대방의 uid
+
+                if (post == null) {
+                    return PostResponse.notExistPost("없거나 삭제된 게시물입니다.");
+                }
+                Boolean isExistAppliedMatch = matchRepository.existsMatchByApplicantIdAndExchangePost(userId, (ExchangePost) post);
+                Boolean isExistWriterMatch = matchRepository.existsMatchByWriterIdAndExchangePost(userId, (ExchangePost) post);
+                if (isExistAppliedMatch) {
+                    // 신청자로 매칭된 경우
+                    Match applicatedMatch = matchRepository.getMatchByApplicantIdAndExchangePost(userId, (ExchangePost) post);
+                    ratingService.rate(applicatedMatch, score);
+                    opponentUid = applicatedMatch.getWriterId(); // 나 = 게시글 신청자 / 상대방 = 게시글 작성자
+                } else if (isExistWriterMatch) {
+                    // 게시글 작성자로 매칭된 경우
+                    Match writerMatch = matchRepository.getMatchByWriterIdAndExchangePost(userId, (ExchangePost) post);
+                    ratingService.rate(writerMatch, score);
+                    opponentUid = writerMatch.getApplicantId(); // 나 = 게시글 작성자 / 상대방 = 게시글 신청자
+                } else {
+                    responseJson.put("message", "매칭 내역이 없습니다.");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(responseJson);
+                }
+
+                // 상대방의 신뢰온도 높아지거나 낮아짐
+                ratingService.rateTemperature(opponentUid, score);
+
+                responseJson.put("message", "평점을 입력했습니다.");
+                return ResponseEntity.status(HttpStatus.OK)
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(responseJson);
             }
