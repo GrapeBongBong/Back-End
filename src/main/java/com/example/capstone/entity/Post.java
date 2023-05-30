@@ -55,12 +55,12 @@ public class Post {
     // 작성자
 
     // 댓글
-    @OneToMany(mappedBy = "post")
+    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE)
     @Column(name = "comments")
     private List<Comment> comments = new ArrayList<>();
 
     // '좋아요' 수
-    @OneToMany(mappedBy = "post")
+    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE)
     private List<LikePost> likes;
 
     // 댓글 등록
