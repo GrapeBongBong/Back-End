@@ -7,10 +7,7 @@ import com.example.capstone.dto.AnonymousPostDTO;
 import com.example.capstone.dto.ExchangePostDTO;
 import com.example.capstone.dto.PostDTO;
 import com.example.capstone.entity.*;
-import com.example.capstone.repository.ChatRoomRepository;
-import com.example.capstone.repository.ExchangePostRepository;
-import com.example.capstone.repository.PostImageRepository;
-import com.example.capstone.repository.PostRepository;
+import com.example.capstone.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +28,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final PostImageRepository postImageRepository;
     private final ChatRoomRepository chatRoomRepository;
+    private final MatchRepository matchRepository;
     private final AmazonS3 amazonS3Client;
 
     @Value("${cloud.aws.s3.bucket}")
@@ -110,7 +108,29 @@ public class PostService {
     }
 
     public String delete(Post post) {
-        // 해당 포스트에 이미지 있는지 확인
+        // 1. 채팅방 있는지 확인 후 채팅방 삭제
+        // 2. 재능교환 매칭 내역 있는지 확인 후 매칭 내역 삭제
+        // 3. 이미지 있는지 확인 후 이미지 삭제
+
+        // 1. 재능교환 게시글인 경우에만 채팅방이 존재하므로
+        if (post.getPostType() == PostType.T) {
+            // 채팅방이 있는 게시글이면 채팅방도 삭제
+            ExchangePost exchangePost = (ExchangePost) post;
+            boolean isExist = chatRoomRepository.existsChatRoomByExchangePost(exchangePost);
+            if (isExist) { // 채팅방 삭제 (삭제하려는 게시글과 관련된 모든 채팅방 삭제)
+                chatRoomRepository.deleteChatRoomsByExchangePost(exchangePost);
+            }
+        }
+
+        // 2. 재능교환 매칭 내역 있는지 확인
+        // 해당 포스트에 관련된 매칭 내역 모두 삭제
+        List<Match> matchList = matchRepository.getMatchesByExchangePost((ExchangePost) post);
+        System.out.println("matchList = " + matchList);
+        if (matchList != null) {
+            matchRepository.deleteAll(matchList);
+        }
+
+        // 3. 해당 포스트에 이미지 있는지 확인
         List<PostImage> postImages = postImageRepository.findPostImagesByPost(post);
 
         if (postImages != null) { // 이미지가 있다면 S3 에서 삭제
@@ -124,16 +144,6 @@ public class PostService {
                 } else {
                     return "S3 에 저장되어 있지 않은 이미지가 있습니다.";
                 }
-            }
-        }
-
-        // 재능교환 게시글인 경우에만 채팅방이 존재하므로
-        if (post.getPostType() == PostType.T) {
-            // 채팅방이 있는 게시글이면 채팅방도 삭제
-            ExchangePost exchangePost = (ExchangePost) post;
-            boolean isExist = chatRoomRepository.existsChatRoomByExchangePost(exchangePost);
-            if (isExist) { // 채팅방 삭제 (삭제하려는 게시글과 관련된 모든 채팅방 삭제)
-                chatRoomRepository.deleteChatRoomsByExchangePost(exchangePost);
             }
         }
 
