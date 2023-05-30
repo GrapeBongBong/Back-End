@@ -120,6 +120,14 @@ public class PostService {
             if (isExist) { // 채팅방 삭제 (삭제하려는 게시글과 관련된 모든 채팅방 삭제)
                 chatRoomRepository.deleteChatRoomsByExchangePost(exchangePost);
             }
+
+            // 3. 재능교환 매칭 내역 있는지 확인
+            // 해당 포스트에 관련된 매칭 내역 모두 삭제
+            List<Match> matchList = matchRepository.getMatchesByExchangePost((ExchangePost) post);
+            System.out.println("matchList = " + matchList);
+            if (matchList != null) {
+                matchRepository.deleteAll(matchList);
+            }
         }
 
         // 2. 해당 포스트에 이미지 있는지 확인
@@ -137,14 +145,6 @@ public class PostService {
                     return "S3 에 저장되어 있지 않은 이미지가 있습니다.";
                 }
             }
-        }
-
-        // 3. 재능교환 매칭 내역 있는지 확인
-        // 해당 포스트에 관련된 매칭 내역 모두 삭제
-        List<Match> matchList = matchRepository.getMatchesByExchangePost((ExchangePost) post);
-        System.out.println("matchList = " + matchList);
-        if (matchList != null) {
-            matchRepository.deleteAll(matchList);
         }
 
         postRepository.delete(post);
