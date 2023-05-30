@@ -10,4 +10,7 @@ import java.util.List;
 @Repository
 public interface MatchRepository extends JpaRepository<Match, Long> {
     List<Match> getMatchesByExchangePost(ExchangePost exchangePost);
+    List<Match> findByWriterIdOrApplicantId(Long writerId, Long applicantId);
+    List<Match> findByWriterId(Long writerId);
+    List<Match> findByApplicantId(Long applicantId);
 }
