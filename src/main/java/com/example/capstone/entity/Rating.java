@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Getter
 @Setter
@@ -16,9 +17,11 @@ public class Rating {
     private Long id;
 
     // 평점 테이블
-    // match 에서 가져와야 할 듯?
     @ManyToOne(fetch = FetchType.LAZY)
     private Match match;
+
+    // 평점을 매긴 사용자 uid
+    private Long uid;
 
     // 평점
     private int score;

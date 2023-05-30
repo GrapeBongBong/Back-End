@@ -29,6 +29,7 @@ public class PostService {
     private final PostImageRepository postImageRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final MatchRepository matchRepository;
+    private final RatingRepository ratingRepository;
     private final AmazonS3 amazonS3Client;
 
     @Value("${cloud.aws.s3.bucket}")
@@ -109,8 +110,9 @@ public class PostService {
 
     public String delete(Post post) {
         // 1. 채팅방 있는지 확인 후 채팅방 삭제
-        // 2. 이미지 있는지 확인 후 이미지 삭제
-        // 3. 재능교환 매칭 내역 있는지 확인 후 매칭 내역 삭제
+        // 2. 재능교환 매칭 내역 있는지 확인 후
+        // 3. 관련 평점 삭제
+        // 4. 매칭 내역 삭제
 
         // 1. 재능교환 게시글인 경우에만 채팅방이 존재하므로
         if (post.getPostType() == PostType.T) {
@@ -121,11 +123,15 @@ public class PostService {
                 chatRoomRepository.deleteChatRoomsByExchangePost(exchangePost);
             }
 
-            // 3. 재능교환 매칭 내역 있는지 확인
+            // 2. 재능교환 매칭 내역 있는지 확인
             // 해당 포스트에 관련된 매칭 내역 모두 삭제
             List<Match> matchList = matchRepository.getMatchesByExchangePost((ExchangePost) post);
-            System.out.println("matchList = " + matchList);
             if (matchList != null) {
+                // 3. 평점 삭제
+                for (Match match: matchList) {
+                    List<Rating> ratingList = ratingRepository.getRatingsByMatch(match);
+                    ratingRepository.deleteAll(ratingList);
+                }
                 matchRepository.deleteAll(matchList);
             }
         }

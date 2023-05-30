@@ -159,36 +159,51 @@ public class MatchController {
                 Long userId = user.get().getUid();
                 Post post = postRepository.findByPid(postId);
                 Long opponentUid; // 매칭이 이루어진 상대방의 uid
+                Match match;
 
                 if (post == null) {
                     return PostResponse.notExistPost("없거나 삭제된 게시물입니다.");
-                }
-                Boolean isExistAppliedMatch = matchRepository.existsMatchByApplicantIdAndExchangePost(userId, (ExchangePost) post);
-                Boolean isExistWriterMatch = matchRepository.existsMatchByWriterIdAndExchangePost(userId, (ExchangePost) post);
-                if (isExistAppliedMatch) {
-                    // 신청자로 매칭된 경우
-                    Match applicatedMatch = matchRepository.getMatchByApplicantIdAndExchangePost(userId, (ExchangePost) post);
-                    ratingService.rate(applicatedMatch, score);
-                    opponentUid = applicatedMatch.getWriterId(); // 나 = 게시글 신청자 / 상대방 = 게시글 작성자
-                } else if (isExistWriterMatch) {
-                    // 게시글 작성자로 매칭된 경우
-                    Match writerMatch = matchRepository.getMatchByWriterIdAndExchangePost(userId, (ExchangePost) post);
-                    ratingService.rate(writerMatch, score);
-                    opponentUid = writerMatch.getApplicantId(); // 나 = 게시글 작성자 / 상대방 = 게시글 신청자
                 } else {
-                    responseJson.put("message", "매칭 내역이 없습니다.");
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    Boolean isExistAppliedMatch = matchRepository.existsMatchByApplicantIdAndExchangePost(userId, (ExchangePost) post);
+                    Boolean isExistWriterMatch = matchRepository.existsMatchByWriterIdAndExchangePost(userId, (ExchangePost) post);
+                    if (isExistAppliedMatch) {
+                        // 신청자로 매칭된 경우
+                        match = matchRepository.getMatchByApplicantIdAndExchangePost(userId, (ExchangePost) post);
+                        // 하나의 매칭에 대해서 평점 대이터는 두 개만 존재해야 함
+                        // 매칭에 대한 평점 내역이 있는 경우 확인
+                        if (ratingService.isExist(match, userId)) {
+                            responseJson.put("message", "이미 평점을 입력했습니다.");
+                            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .body(responseJson);
+                        }
+                        ratingService.rate(match, score, userId);
+                        opponentUid = match.getWriterId(); // 나 = 게시글 신청자 / 상대방 = 게시글 작성자
+                    } else if (isExistWriterMatch) {
+                        // 게시글 작성자로 매칭된 경우
+                        match = matchRepository.getMatchByWriterIdAndExchangePost(userId, (ExchangePost) post);
+                        if (ratingService.isExist(match, userId)) {
+                            responseJson.put("message", "이미 평점을 입력했습니다.");
+                            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .body(responseJson);
+                        }
+                        ratingService.rate(match, score, userId);
+                        opponentUid = match.getApplicantId(); // 나 = 게시글 작성자 / 상대방 = 게시글 신청자
+                    } else {
+                        responseJson.put("message", "매칭 내역이 없습니다.");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body(responseJson);
+                    }
+                    // 상대방의 신뢰온도 높아지거나 낮아짐
+                    ratingService.rateTemperature(opponentUid, score);
+
+                    responseJson.put("message", "평점을 입력했습니다.");
+                    return ResponseEntity.status(HttpStatus.OK)
                             .contentType(MediaType.APPLICATION_JSON)
                             .body(responseJson);
                 }
-
-                // 상대방의 신뢰온도 높아지거나 낮아짐
-                ratingService.rateTemperature(opponentUid, score);
-
-                responseJson.put("message", "평점을 입력했습니다.");
-                return ResponseEntity.status(HttpStatus.OK)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseJson);
             }
         } catch (Exception e) {
             return ServerErrorResponse.handleServerError("서버에 예기치 않은 오류가 발생했습니다." + e);

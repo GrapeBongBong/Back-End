@@ -16,10 +16,11 @@ public class RatingService {
     private final UserRepository userRepository;
     private final RatingRepository ratingRepository;
 
-    public void rate(Match match, int score) {
+    public void rate(Match match, int score, Long uid) {
         Rating rating = new Rating();
         rating.setMatch(match);
         rating.setScore(score);
+        rating.setUid(uid);
         ratingRepository.save(rating);
     }
 
@@ -42,5 +43,11 @@ public class RatingService {
             }
             userRepository.save(opponent);
         }
+    }
+
+    public boolean isExist(Match match, Long userId) {
+        boolean isUserExists = ratingRepository.existsRatingByMatchAndUid(match, userId);
+        if (isUserExists) return true;
+        else return false;
     }
 }

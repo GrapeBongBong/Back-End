@@ -38,6 +38,8 @@ public class ExchangePostDTO extends PostDTO{
 
     private Boolean status; // 재능 거래 상태
 
+    private Double temperature; // 신뢰온도
+
     public static List<ExchangePostDTO> toExchangePostDTOList(List<Post> postList, List<Boolean> isLikedList) {
         List<ExchangePostDTO> exchangePostDTOList = new ArrayList<>();
 
@@ -61,6 +63,7 @@ public class ExchangePostDTO extends PostDTO{
         exchangePostDTO.setWriterImageURL(exchangePost.getUser().getProfile_img());
         exchangePostDTO.setLikeCount(exchangePost.getLikes().size());
         exchangePostDTO.setLiked(isLiked);
+        exchangePostDTO.setTemperature(exchangePost.getUser().getTemperature());
 
         exchangePostDTO.setGiveCate(exchangePost.getGiveCate());
         exchangePostDTO.setGiveTalent(exchangePost.getGiveTalent());
